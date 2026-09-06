@@ -1,0 +1,23 @@
+.venv/
+.tmp/
+__pycache__/
+.pytest_cache/
+work/
+output/
+*.psd
+
+# User-provided illustrations and line art (never publish by default)
+input/
+
+# Sample-specific semantic plans and generated runtime state
+examples/
+docs/active_job.json
+docs/jobs/
+docs/PREVIEW.md
+docs/PROGRESS.md
+docs/RESUME.md
+
+# Test and tool by-products
+.coverage
+htmlcov/
+*.py[cod]
