@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import time
 import tkinter as tk
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -31,6 +32,31 @@ def main():
             atomic_write(target, original)
             state["overwritten"] = True
         if window.updates >= 2:
+            root.update_idletasks()
+            required = ['PSD','参照','差分']
+            if active.get('job') and (Path(active['job'])/'editing_report.json').exists():
+                required += ['線画','背景','配色']
+            if not all(mode in window.images for mode in required):
+                if elapsed < 25:
+                    root.after(200, check)
+                    return
+                result.update(error='Missing preview images', missing=[m for m in required if m not in window.images])
+                write_json(folder/'result.json',result)
+                window.close()
+                return
+            for mode in required:
+                window.mode.set(mode)
+                window.draw()
+                root.update_idletasks()
+            window.mode.set('参照')
+            window.draw()
+            x0,y0,width,height = window.image_bounds
+            window.inspect_seed(SimpleNamespace(x=x0+width//2,y=y0+height//2))
+            result['seed_inspection'] = window.seed_label.cget('text')
+            assert 'RGB=' in result['seed_inspection']
+            result['preview_modes'] = required
+            window.mode.set('PSD')
+            window.draw()
             root.update_idletasks()
             try:
                 ImageGrab.grab(window=root.winfo_id()).save(folder / "preview.png")

@@ -97,6 +97,9 @@ def evaluate(job, thresholds=None):
     psd = Path(manifest["psd_path"])
     if digest(psd) != manifest["psd_hash"]:
         raise ValueError("PSD changed outside build. Rebuild before evaluating this plan.")
+    for key in ('editing_target', 'editing_report'):
+        if key in manifest and digest(job / manifest[key]) != manifest[key + '_hash']:
+            raise ValueError(f'{key} changed since build. Run build-compact before evaluate.')
     progress(job, "validation", "保存済みPSDの再合成と誤差計算中", next_action="中断時は evaluate --job を再実行")
     reconstructed = render_psd(psd, generated=True)
     save_image(reconstructed, job / "reconstructed.png")
@@ -122,7 +125,22 @@ def evaluate(job, thresholds=None):
     thresholds = thresholds or DEFAULT_THRESHOLDS
     passed = global_metrics["mae"] <= thresholds["mae"] and global_metrics["ssim"] >= thresholds["ssim"] and global_metrics["mean_delta_e"] <= thresholds["mean_delta_e"] and global_metrics["edge_mismatch"] <= thresholds["edge_mismatch"]
     result = {"evaluated": True, "passed": bool(passed), "thresholds": thresholds, "global": global_metrics, "global_ssim": float(ssim), "mean_delta_e": global_metrics["mean_delta_e"], "geometry_regions": geometry_scores, "semantic_parts": semantic_scores, "worst_regions": sorted(geometry_scores, key=lambda r: r["mean_delta_e"], reverse=True)[:8], "solvers": manifest["solvers"], "classification_source": plan.get("classification_source", "unspecified"), "plan_hash": manifest["plan_hash"], "psd_hash": manifest["psd_hash"]}
-    result['layer_counts']={'pixel':len(manifest['layers']),'groups':5,'total':len(manifest['layers'])+5}
+    groups = manifest.get('group_count', 5)
+    result['layer_counts']={'pixel':len(manifest['layers']),'groups':groups,'total':len(manifest['layers'])+groups}
+    if 'editing_target' in manifest:
+        intended = np.asarray(Image.open(job / manifest['editing_target']).convert('RGB'), dtype=np.float32) / 255
+        roundtrip_error = np.abs(np.round(intended*255)-np.round(actual*255))
+        editing = read_json(job / manifest['editing_report'])
+        readback_passed = float(roundtrip_error.mean()) <= .5 and float(roundtrip_error.max()) <= 3
+        result.update(reference_passed=bool(passed), editing_readback={
+            'mae':float(roundtrip_error.mean()), 'max_channel_error':float(roundtrip_error.max()),
+            'passed':readback_passed}, editing_preferences=editing,
+            semantic_quality='requires_visual_review')
+        passed = passed and readback_passed and editing['layer_range_met']
+        result['passed'] = bool(passed)
+        result['unmet_requirements'] = [key for key, ok in (
+            ('reference_quality',result['reference_passed']),('editing_readback',readback_passed),
+            ('layer_range',editing['layer_range_met'])) if not ok]
     if manifest.get('pipeline')=='compact':
         result['pipeline']='compact'
         result['line_alignment']=read_json(job/'alignment.json')
@@ -130,12 +148,19 @@ def evaluate(job, thresholds=None):
     write_json(job / "analysis.json", result)
     count = read_json(job / "status.json").get("repair_count", 0)
     phase = ("complete" if plan.get("classification_source") == "astra_reviewed" else "quality_passed") if passed else "repair_limit" if count >= 3 else "needs_repair"
-    progress(job, phase, "数値品質基準を達成" if passed else "数値品質基準未達", metrics=global_metrics, passed=bool(passed), next_action="Astraで意味分類とPSDを最終確認" if passed else "repair --job で局所画像を生成" if count < 3 else "最大3回に到達。未達領域をユーザーへ報告")
+    if passed and manifest.get('hierarchy') == 'parts':
+        phase = 'post_review_required'
+    next_action = ("Astraで意味分類とPSDを最終確認" if passed else
+                   "semantic_planの品質/枚数条件を確認しbuild-compact" if manifest.get('pipeline') == 'compact' else
+                   "repair --job で局所画像を生成" if count < 3 else "最大3回に到達。未達領域をユーザーへ報告")
+    message = "数値品質・指定条件を達成" if passed else "未達: " + ', '.join(result.get('unmet_requirements', ['reference_quality']))
+    progress(job, phase, message, metrics=global_metrics, passed=bool(passed), next_action=next_action)
     # Deliver companion artifacts alongside an explicitly requested external PSD.
     if psd.parent != job:
         for name in ("reconstructed.png", "diff.png", "analysis.json", "layer_plan.json"):
             atomic_write(psd.parent / name, (job / name).read_bytes())
-    return {"job": str(job), "passed": bool(passed), "metrics": global_metrics, "classification_source": result["classification_source"], "analysis": str(job / "analysis.json")}
+    return {"job": str(job), "passed": bool(passed), "metrics": global_metrics, "classification_source": result["classification_source"], "analysis": str(job / "analysis.json"),
+            **({key:result[key] for key in ('reference_passed','editing_readback')} if 'editing_target' in manifest else {})}
 
 
 def repair(job, limit=5):

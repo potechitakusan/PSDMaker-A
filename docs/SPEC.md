@@ -1,5 +1,25 @@
 # 仕様 v1
 
+## 編集優先プロファイル（2nd concept対応）
+
+新規制作のAgent手順は `docs/ARTIST_WORKFLOW.md`。従来compact計画との互換性を保ち、`configure-editing`でartistプロファイルへ移行する。利用者から描画枚数の範囲と色統一許容値0〜100を受け取り、お任せ・未指定は意味素材数と共有素材の色差から自動計算する。描画数・フォルダ数・合計を別記し、上限超過は保存前に拒否、下限未達は保存可能だが未達として扱う。
+
+同じpalette_idは共通の下塗り色。group_pathの階層下で各パーツにBase/Shadow/Highlight/色補正をまとめる。影・光のRGBはneutral/cool/warmの一定照明色、透明度は画素別。色統一は原画の塗りからのCIE76距離を許容値/5以内に制限する。新規設定のdetail_mode=relativeは残る色差をMultiply/Screen色補正へ分離し、Baseの変更に応答させる。意図した固有色だけpart.detail_mode=pigmentでNormalへ残せる。detail_mode未指定の旧計画は旧方式を維持する。既定線画は回収線RGBの輝度を全チャンネルに適用したモノクロ。新規設定のline_cleanupは、補正ガイドに裏付けされない点や塗り跡を塗り側へ戻し、モノクロ化前の合成RGBを保つ。線画の変更は塗りの許容値と別で記録・評価する。
+
+背景単独画像・疑わしい成分一覧を出力する。明るい背景を目視確認した場合だけbackground_cleanupを使い、近隣前景と背景色の比較で狭い境界を回収する。select-colorは原寸種座標、色差/RGB距離、4/8近傍/全体、色系統/HSV色相、source-partによる範囲制限を扱う。assign-selectionは入力一致を検証して再現条件を計画へ埋め込み、重複を拒否し、旧計画保存とpartial_reviewへの変更を行う。
+
+評価は原画の品質基準を維持し、意図した編集結果editing_targetとのPSD読み戻しを独立測定する。後者はMAE≤0.5、最大チャンネル差≤3（0〜255）で検証する。編集用target/reportはハッシュを検証する。数値合格は意味分離や実アプリ確認の代用ではない。プレビューは線画・背景・配色も表示する。以下のレイヤー数・カラー線・役割別フォルダの記述は旧プロファイルの仕様。
+
+## 事後レビューと局所修正
+
+`docs/POST_REVIEW_CHECKLIST.md`を作業後に必須確認する。artistのbuild/evaluateは数値合格でもpost_review_requiredで止まり、`post-review`が実PSDから全パレットの強い色替え、素材仮色、線/背景単独、暗背景、影/光OFFを生成する。黒・グレーも彩度と明度を上げ、色替えが見えないまま検査を通さない。PSDファイル自体は変更しない。
+
+Astraは10項目のstatus・所見・画像根拠を記入し、`finish-review`がPSD/計画/画像のハッシュ、全項目と数値評価の一致を検証する。未記入や古い根拠を拒否し、failはneeds_repair、limitationはcomplete_with_limitationsとして報告する。ハッシュ検証は視覚判断の正しさを保証せず、チェックリスト生成だけで確認済みとは扱わない。
+
+`review-components --geometry ID`または`--material ID`は連結成分IDと画像一覧を生成する。semantic_planのcomponent_assignmentsにkind/region/components/from/toを記入すると、同色の白目と髪などを局所的に別素材へ移せる。未知ID・重複・元パーツ不一致を拒否する。新規compact_version=2は線画変形の画像外端を最近傍の領域で補い、画面端を一律に背景へ落とさない。
+
+自動描画数の目安は前景素材数Nに対し2N+2〜5N+2（全てrelativeの場合）。pigment素材は上限を1ずつ減らす。実在する必要なレイヤーだけ保存し、フォルダ数は別に数える。
+
 ## コンパクト工程と作業時間ログ
 
 - compactの意味計画には `recover_background_leaks`（既定true）がある。falseの場合は背景の色が暗いことだけを理由に前景へ再割当しない。前景と同色の独立した背景要素を保持する回帰テストがある。

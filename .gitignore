@@ -2,15 +2,24 @@
 .tmp/
 __pycache__/
 .pytest_cache/
-work/
-output/
+/work/
+/output/
+
+# Generated PSD files are private by default.
 *.psd
 
+# Only these reviewed example files are public. Ignore any future work files
+# placed under examples/ until they are deliberately added to this allowlist.
+/examples/*
+!/examples/reference.jpg
+!/examples/output/
+/examples/output/*
+!/examples/output/output.psd
+
 # User-provided illustrations and line art (never publish by default)
-input/
+/input/
 
 # Sample-specific semantic plans and generated runtime state
-examples/
 docs/active_job.json
 docs/jobs/
 docs/PREVIEW.md

@@ -120,14 +120,27 @@ def export_psd(job, manifest, output):
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     psd = PSDImage.new("RGBA", tuple(manifest["size"]), color=(0, 0, 0, 0))
-    character = Group.new(psd, "Character")
-    character.blend_mode = BlendMode.PASS_THROUGH
+    hierarchy = manifest.get('hierarchy') == 'parts'
+    character = psd if hierarchy else Group.new(psd, "Character")
+    if not hierarchy:
+        character.blend_mode = BlendMode.PASS_THROUGH
     groups = {}
-    for name in ("Background", "Base", "Shadows", "Highlights"):
+    for name in (() if hierarchy else ("Background", "Base", "Shadows", "Highlights")):
         groups[name] = Group.new(character, name)
         groups[name].blend_mode = BlendMode.PASS_THROUGH
     for item in manifest["layers"]:
-        parent = character if item["group"] == "Lineart" else groups[item["group"]]
+        if hierarchy:
+            parent = psd
+            for depth, name in enumerate(item['group_path'], 1):
+                key = tuple(item['group_path'][:depth])
+                if key not in groups:
+                    group = Group.new(parent, 'Group')
+                    group.name = name
+                    group.blend_mode = BlendMode.PASS_THROUGH
+                    groups[key] = group
+                parent = groups[key]
+        else:
+            parent = character if item["group"] == "Lineart" else groups[item["group"]]
         with Image.open(job / item["image_path"]) as source:
             layer = PixelLayer.frompil(source.convert("RGBA"), parent, name="Layer", left=item["bbox"][0], top=item["bbox"][1])
         # The public setter also writes the Unicode name and a MacRoman fallback.

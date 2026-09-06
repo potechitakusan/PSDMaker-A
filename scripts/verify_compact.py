@@ -19,10 +19,12 @@ def main():
     job=Path(args.job)
     manifest=read_json(job/'layers.json')
     psd=PSDImage.open(manifest['psd_path'])
-    groups={g.name:g for g in psd[0] if g.is_group()}
+    pixels = [layer for layer in psd.descendants() if not layer.is_group()]
+    items = {item['name']:item for item in manifest['layers']}
     panels=[('Reference',Image.open(job/'reference.png').convert('RGB'))]
-    for title,hidden in [('PSD reconstruction',[]),('Shadows OFF',['Shadows']),('Highlights OFF',['Highlights']),('Lineart OFF',['Lineart']),('Base colors + lineart',['Shadows','Highlights'])]:
-        for child in psd[0]: child.visible=child.name not in hidden and not (child.kind=='pixel' and 'Lineart' in hidden)
+    for title,hidden in [('PSD reconstruction',[]),('Shadows OFF',['Shadows']),('Highlights OFF',['Highlights']),('Lineart OFF',['Lineart']),('Base colors + lineart',['Shadows','Highlights','Details','ColorAdjustments'])]:
+        for child in pixels:
+            child.visible = items[child.name]['group'] not in hidden
         rendered=render_generated_psd(psd)
         white=Image.new('RGBA',rendered.size,'white')
         rendered=Image.alpha_composite(white,rendered).convert('RGB')

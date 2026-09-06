@@ -53,6 +53,42 @@ def parser():
     material.add_argument("--job", required=True)
     material.add_argument("--geometry", type=int, required=True)
     material.add_argument("--clusters", type=int, default=6)
+    editing = commands.add_parser('configure-editing', help='Set artist preferences; auto or explicit values')
+    editing.add_argument('--job', required=True)
+    editing.add_argument('--layer-range', default='auto', help='Drawing layers excluding folders: auto or 100-200')
+    editing.add_argument('--color-tolerance', default='auto', help='auto or 0..100; paint Delta E76 cap = value / 5')
+    editing.add_argument('--lighting', choices=['neutral', 'cool', 'warm'], default='neutral')
+    editing.add_argument('--lineart', choices=['monochrome', 'source'], default='monochrome')
+    editing.add_argument('--detail-mode', choices=['relative','pigment'], default='relative')
+    review = commands.add_parser('review-editing', help='Inspect masks, background and preferences before PSD build')
+    review.add_argument('--job', required=True)
+    selection = commands.add_parser('select-color', help='Preview a seed color selection without modifying the plan')
+    selection.add_argument('--job', required=True)
+    selection.add_argument('--x', type=int, required=True)
+    selection.add_argument('--y', type=int, required=True)
+    selection.add_argument('--name', default='selection')
+    selection.add_argument('--tolerance', type=float, default=15)
+    selection.add_argument('--metric', choices=['delta-e-2000', 'delta-e-76', 'rgb'], default='delta-e-2000')
+    selection.add_argument('--global-match', action='store_true')
+    selection.add_argument('--connectivity', type=int, choices=[4, 8], default=4)
+    selection.add_argument('--families', nargs='+')
+    selection.add_argument('--hue-range', nargs=2, type=float)
+    selection.add_argument('--source-part')
+    assign = commands.add_parser('assign-selection', help='Apply a reviewed selection proposal to semantic parts')
+    assign.add_argument('--job', required=True)
+    assign.add_argument('--selection', required=True)
+    assign.add_argument('--to', required=True)
+    assign.add_argument('--source-part', required=True)
+    components = commands.add_parser('review-components',help='Inspect disconnected components by ID for local reassignment')
+    components.add_argument('--job',required=True)
+    component_kind=components.add_mutually_exclusive_group(required=True)
+    component_kind.add_argument('--geometry',type=int)
+    component_kind.add_argument('--material',type=int)
+    post = commands.add_parser('post-review',help='Render actual PSD recolors and create the Astra checklist')
+    post.add_argument('--job',required=True)
+    finish = commands.add_parser('finish-review',help='Validate and record completed visual self-review')
+    finish.add_argument('--job',required=True)
+    finish.add_argument('--assessment')
     return main
 
 
@@ -63,6 +99,15 @@ def main():
         if command in ("prepare-compact", "build-compact", "review-materials"):
             from . import compact
             function = getattr(compact,command.replace('-','_'))
+        elif command in ('configure-editing', 'review-editing'):
+            from . import artist
+            function = getattr(artist, command.replace('-', '_'))
+        elif command in ('select-color', 'assign-selection', 'review-components'):
+            from . import selection
+            function = getattr(selection, command.replace('-', '_'))
+        elif command in ('post-review','finish-review'):
+            from . import post_review
+            function = getattr(post_review,command.replace('-','_'))
         else:
             function = monitor if command == "monitor" else getattr(pipeline, command.replace("-", "_"))
         result = function(**args)

@@ -84,7 +84,7 @@ def region_sheets(rgb, labels, job, prefix="geometry_review", names=None):
 def prepare_compact(reference, lineart, job):
     job = Path(job).resolve()
     job.mkdir(parents=True, exist_ok=True)
-    config = {"reference_hash": digest(reference), "lineart_hash": digest(lineart), "compact_version": 1}
+    config = {"reference_hash": digest(reference), "lineart_hash": digest(lineart), "compact_version": 2}
     if (job / "compact_job.json").exists():
         if read_json(job / "compact_job.json")["config"] != config:
             raise ValueError("Use a fresh job for different compact inputs")
@@ -95,11 +95,15 @@ def prepare_compact(reference, lineart, job):
         raise ValueError("Opaque reference required")
     rgb = rgba[...,:3].astype(np.float32)/255
     with Image.open(lineart) as source:
+        lineart_size = list(source.size)
         line = np.asarray(source.convert("RGBA").resize((rgb.shape[1],rgb.shape[0]))).astype(np.float32)/255
     guide = line[...,3] if np.any(line[...,3]<1) else 1-line[...,:3].min(2)
     underlying, ink, alpha, warped, mx, my, stats = align_linework(rgb, guide)
+    stats.update(reference_size=[rgb.shape[1],rgb.shape[0]], lineart_original_size=lineart_size,
+                 lineart_resized=lineart_size != [rgb.shape[1],rgb.shape[0]])
     original_labels = geometry_labels(guide)
-    labels = cv2.remap(original_labels.astype(np.float32), mx, my, cv2.INTER_NEAREST).astype(np.int32)
+    labels = cv2.remap(original_labels.astype(np.float32), mx, my, cv2.INTER_NEAREST,
+                       borderMode=cv2.BORDER_REPLICATE).astype(np.int32)
     labels[labels == 0] = 1
     np.savez_compressed(job / "compact_arrays.npz", rgb=rgb, underlying=underlying, ink=ink, alpha=alpha, guide=guide, warped=warped, geometry=labels)
     save_image(image_u8(rgb), job / "reference.png")
@@ -158,6 +162,8 @@ def semantic_masks(arrays, plan):
     required_g = set(np.unique(geometry)) - {int(s['geometry']) for s in plan.get('material_splits',[])}
     if seen_g != required_g or seen_m != set(np.unique(materials)) - {0}:
         raise ValueError(f'Incomplete reviewed plan. Missing geometry: {sorted(required_g-seen_g)}, material: {sorted(set(np.unique(materials))-{0}-seen_m)}')
+    from .selection import apply_component_assignments
+    labels = apply_component_assignments(geometry, materials, labels, plan)
     for index,part in enumerate(parts,1):
         for gid in part.get('keep_largest_in_geometry',[]):
             selected=(labels==index)&(geometry==gid)
@@ -231,7 +237,9 @@ def semantic_masks(arrays, plan):
             original_lab=rgb2lab(rgb)
             candidate&=(np.hypot(original_lab[...,1],original_lab[...,2])<derived.get('max_chroma',7))&(original_lab[...,0]>derived.get('min_lightness',83))
             labels[candidate]=index
-    return labels
+    from .selection import apply_selections, recover_background_boundary
+    labels = recover_background_boundary(rgb, labels, parts, plan.get('background_cleanup'))
+    return apply_selections(rgb, labels, plan)
 
 
 def decompose_material(target, base_color):
@@ -275,6 +283,21 @@ def build_compact(job, output=None):
     records=region_sheets(arrays['rgb'],labels,job,'semantic_review', {i:p['semantic_id'] for i,p in enumerate(plan['parts'],1)})
     layers=[]; solvers=[]
     target=arrays['underlying']
+    artist = plan.get('editing', {}).get('profile') == 'artist'
+    if 'editing' in plan and not artist:
+        raise ValueError('Unknown editing profile; use configure-editing')
+    group_path = None
+    paint_target = target.copy()
+    paint_delta = 0.0
+    if artist:
+        from .artist import resolve_settings, decompose_artist, part_group_path, count_groups, background_audit, write_editing_report, relative_color_layers, clean_linework
+        line_alpha = arrays['alpha']
+        if plan['editing'].get('line_cleanup',False):
+            target, line_alpha, line_stats = clean_linework(arrays)
+            paint_target = target.copy()
+            write_json(job/'line_cleanup.json',line_stats)
+        shared_colors, settings = resolve_settings(plan, labels, target, line_alpha)
+        audit = background_audit(arrays['rgb'], labels, plan['parts'], job)
     def add(name,group,rgb,alpha,mode='normal'):
         if not (alpha>.003).any():
             return
@@ -283,6 +306,8 @@ def build_compact(job, output=None):
         path=f'compact_layers/{len(layers):03d}.png'
         save_image(image_u8(rgba),job/path)
         layers.append({'name':name,'group':group,'image_path':path,'bbox':[x0,y0,x1,y1],'blend_mode':mode,'opacity':255})
+        if artist:
+            layers[-1]['group_path'] = group_path
     from .regions import metadata
     evaluation_records=[]
     eval_parts=[]
@@ -291,10 +316,45 @@ def build_compact(job, output=None):
         if not mask.any():
             raise ValueError(f'Empty semantic part {part["semantic_id"]}')
         title=part.get('display_name',part['semantic_id'])
+        if artist:
+            group_path = ['背景'] if part['semantic_id'] == 'background' else part_group_path(part)
         evaluation_records.append(metadata(f'G{i:04d}',None,mask,arrays['rgb'],job))
         eval_parts.append({'semantic_id':part['semantic_id'],'geometry_regions':[f'G{i:04d}']})
         if part['semantic_id']=='background':
             add(f'{title}_Base','Background',target,mask.astype(np.float32))
+            continue
+        if artist:
+            base_color = shared_colors[part['semantic_id']]
+            b, s, sa, h, ha, detail, da, changed = decompose_artist(
+                target[mask][:, None, :], base_color, settings['resolved_color_tolerance'],
+                plan['editing'].get('lighting', 'neutral'))
+            def full_rgb(values):
+                result = np.zeros_like(target)
+                result[mask] = values[:, 0]
+                return result
+            def full_alpha(values):
+                result = np.zeros(mask.shape, np.float32)
+                result[mask] = values[:, 0]
+                return result
+            add(f'{title}_Base', 'Base', full_rgb(b), mask.astype(np.float32))
+            add(f'{title}_Shadow', 'Shadows', full_rgb(s), full_alpha(sa), 'multiply')
+            add(f'{title}_Highlight', 'Highlights', full_rgb(h), full_alpha(ha), 'screen')
+            detail_mode = part.get('detail_mode',plan['editing'].get('detail_mode','pigment'))
+            if detail_mode == 'relative':
+                fitted = b*(1-sa[...,None]+s*sa[...,None])
+                fitted = fitted+(1-fitted)*h*ha[...,None]
+                cs,csa,ch,cha = relative_color_layers(fitted,changed)
+                add(f'{title}_色補正・乗算', 'ColorAdjustments', full_rgb(cs), full_alpha(csa), 'multiply')
+                add(f'{title}_色補正・スクリーン', 'ColorAdjustments', full_rgb(ch), full_alpha(cha), 'screen')
+            elif detail_mode == 'pigment':
+                add(f'{title}_固有色・模様', 'Details', full_rgb(detail), full_alpha(da))
+            else:
+                raise ValueError('Unknown part detail_mode')
+            paint_target[mask] = changed[:, 0]
+            paint_delta = max(paint_delta, float(np.linalg.norm(rgb2lab(changed) - rgb2lab(target[mask][:, None, :]), axis=-1).max()))
+            solvers.append({'semantic_id':part['semantic_id'], 'base_color':np.clip(base_color,1/255,254/255).tolist(),
+                            'palette_id':part.get('palette_id',part['semantic_id']), 'method':'fixed_lighting_with_'+detail_mode,
+                            'detail_pixels':int(np.count_nonzero(da>.003))})
             continue
         sample=target[mask & (arrays['alpha']<.12)]
         if not len(sample): sample=target[mask]
@@ -310,17 +370,39 @@ def build_compact(job, output=None):
         add(f'{title}_Shadow','Shadows',shadow,sa*mask,'multiply')
         add(f'{title}_Highlight','Highlights',light,ha*mask,'screen')
         solvers.append({'semantic_id':part['semantic_id'],'base_color':base_color.tolist(),'method':'spatial_multiply_screen_inverse','shadow_pixels':int(np.count_nonzero(sa*mask>.01)),'highlight_pixels':int(np.count_nonzero(ha*mask>.01))})
-    add('Lineart_元絵位置補正済み','Lineart',arrays['ink'],arrays['alpha'])
+    ink = arrays['ink']
+    if not artist:
+        line_alpha = arrays['alpha']
+    if artist:
+        group_path = ['線画']
+        if plan['editing'].get('lineart', 'monochrome') == 'monochrome':
+            gray = np.sum(ink * np.array([.2126, .7152, .0722]), axis=2)
+            ink = np.repeat(gray[..., None], 3, axis=2)
+        save_image(image_u8(np.dstack([ink, line_alpha])), job/'editing_lineart_rgba.png')
+        save_image(image_u8(ink*line_alpha[...,None]+1-line_alpha[...,None]), job/'editing_lineart_white.png')
+        intended = paint_target*(1-line_alpha[...,None]) + ink*line_alpha[...,None]
+        save_image(image_u8(intended), job/'editing_target.png')
+    add('Lineart_モノクロ' if artist and plan['editing'].get('lineart','monochrome')=='monochrome' else 'Lineart_元絵位置補正済み','Lineart',ink,line_alpha)
     order={name:i for i,name in enumerate(('Background','Base','Shadows','Highlights','Lineart'))}
-    layers.sort(key=lambda x:order[x['group']])
-    total=len(layers)+5
-    if total>plan.get('max_total_layers',100):
+    if not artist:
+        layers.sort(key=lambda x:order[x['group']])
+    groups = count_groups(layers) if artist else 5
+    total=len(layers)+groups
+    if artist:
+        report = write_editing_report(job, settings, layers, audit, paint_delta)
+        if len(layers) > settings['resolved_layer_range'][1]:
+            raise ValueError(f"{len(layers)} pixel layers exceeds budget; merge semantic parts or revise requested range")
+    elif total>plan.get('max_total_layers',100):
         raise ValueError(f'{total} layers including groups exceeds budget; merge semantic parts')
     # Evaluation metadata for the reviewed semantic partition.
     write_json(job/'regions.json',{'regions':evaluation_records,'geometry_names':{i:f'G{i:04d}' for i in range(1,len(plan['parts'])+1)}})
     np.savez_compressed(job/'labels.npz',geometry=labels)
     write_json(job/'layer_plan.json',{'schema_version':2,'classification_source':'astra_reviewed','parts':eval_parts,'semantic_plan':plan})
     manifest={'size':[target.shape[1],target.shape[0]],'layers':layers,'solvers':solvers,'plan_hash':digest(job/'layer_plan.json'),'semantic_plan_hash':digest(job/'semantic_plan.json'),'pixel_layer_count':len(layers),'total_layer_count':total,'pipeline':'compact'}
+    manifest['group_count'] = groups
+    if artist:
+        manifest.update(hierarchy='parts', editing_target='editing_target.png', editing_target_hash=digest(job/'editing_target.png'),
+                        editing_report='editing_report.json', editing_report_hash=digest(job/'editing_report.json'))
     write_json(job/'layers.json',manifest)
     progress(job,'psd_composition',f'{len(layers)}描画レイヤー（グループ込み{total}）を保存中')
     export_psd(job,manifest,output)
@@ -331,7 +413,8 @@ def build_compact(job, output=None):
     write_json(job/'compact_result.json',result)
     from .storage import atomic_write
     if output.parent != job:
-        for filename in ('aligned_lineart_rgba.png','aligned_lineart_white.png','alignment_comparison.png','semantic_plan.json'):
+        for filename in ('aligned_lineart_rgba.png','aligned_lineart_white.png','alignment_comparison.png','semantic_plan.json',
+                         *(('editing_report.json','palette_review.png','editing_lineart_rgba.png','editing_lineart_white.png','background_only.png','background_review.png','editing_target.png') if artist else ())):
             atomic_write(output.parent/filename,(job/filename).read_bytes())
-    progress(job,'complete' if result['passed'] else 'needs_repair','コンパクトPSDの構築・評価完了',pixel_layers=len(layers),total_layers=total,classification_source='astra_reviewed',next_action='semantic_review画像とレイヤー単独表示を確認')
+    progress(job,('post_review_required' if artist else 'complete') if result['passed'] else 'needs_repair','PSD構築・数値評価済み。事後レビューを実施',pixel_layers=len(layers),total_layers=total,classification_source='astra_reviewed',next_action='post-review --job で色替え・単独表示を生成しPOST_REVIEW_CHECKLIST.mdを確認')
     return result

@@ -71,6 +71,7 @@ class PreviewWindow:
         self.messages = queue.Queue(maxsize=8)
         self.images = {}
         self.photo = None
+        self.image_bounds = None
         self.updates = 0
         self.mode = tk.StringVar(value="PSD")
         root.title("PsdMaker — PSD進捗プレビュー")
@@ -94,10 +95,12 @@ class PreviewWindow:
         self.path_label.pack(fill="x")
         toolbar = ttk.Frame(root, padding=(18, 0, 18, 10))
         toolbar.pack(fill="x")
-        for name in ("PSD", "参照", "差分"):
+        for name in ("PSD", "参照", "差分", "線画", "背景", "配色"):
             ttk.Radiobutton(toolbar, text=name, variable=self.mode, value=name, command=self.draw).pack(side="left", padx=7)
         self.detail_label = ttk.Label(toolbar, text="PSDが保存されると自動更新します")
         self.detail_label.pack(side="right")
+        self.seed_label = ttk.Label(root, text="参照画像をクリックすると、色選択に使う原寸座標とRGBを確認できます", padding=(18,0,18,8))
+        self.seed_label.pack(fill="x")
         pane = ttk.Panedwindow(root, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=18)
         self.canvas = tk.Canvas(pane, background="#232a35", highlightthickness=0)
@@ -121,6 +124,7 @@ class PreviewWindow:
         self.status_label = ttk.Label(root, text="待機中", padding=18, wraplength=1100)
         self.status_label.pack(fill="x")
         self.canvas.bind("<Configure>", lambda event: self.draw())
+        self.canvas.bind('<Button-1>', self.inspect_seed)
         root.protocol("WM_DELETE_WINDOW", self.close)
         self.worker = threading.Thread(target=self.poll, daemon=True, name="psd-preview-reader")
         self.worker.start()
@@ -174,7 +178,9 @@ class PreviewWindow:
                 state = read_json(Path(job) / "status.json") if job and (Path(job) / "status.json").exists() else {}
                 state_text = f"{state.get('phase', '監視中')}  |  {state.get('message', 'PSDの上書きを監視しています')}"
                 if job:
-                    for filename, name in (("reference.png", "参照"), ("diff.png", "差分")):
+                    for filename, name in (("reference.png", "参照"), ("diff.png", "差分"),
+                                           ("editing_lineart_white.png", "線画"),
+                                           ("background_only.png", "背景"), ("palette_review.png", "配色")):
                         path = Path(job) / filename
                         if path.exists() and (forced or last_aux.get(name) != file_stamp(path)):
                             stamp = file_stamp(path)
@@ -226,6 +232,7 @@ class PreviewWindow:
 
     def draw(self):
         self.canvas.delete("all")
+        self.image_bounds = None
         width, height = self.canvas.winfo_width(), self.canvas.winfo_height()
         source = self.images.get(self.mode.get())
         if source is None:
@@ -234,12 +241,25 @@ class PreviewWindow:
         picture = source.copy()
         picture.thumbnail((max(1, width - 30), max(1, height - 30)), Image.Resampling.LANCZOS)
         x0, y0 = (width - picture.width) // 2, (height - picture.height) // 2
+        self.image_bounds = (x0, y0, picture.width, picture.height)
         for y in range(0, picture.height, 20):
             for x in range(0, picture.width, 20):
                 color = "#e0e3e8" if ((x // 20 + y // 20) % 2) else "#bfc6cf"
                 self.canvas.create_rectangle(x0 + x, y0 + y, x0 + min(x + 20, picture.width), y0 + min(y + 20, picture.height), fill=color, outline=color)
         self.photo = ImageTk.PhotoImage(picture)
         self.canvas.create_image(width / 2, height / 2, image=self.photo)
+
+    def inspect_seed(self, event):
+        if self.mode.get() != '参照' or not self.image_bounds:
+            return
+        x0, y0, width, height = self.image_bounds
+        if not (x0 <= event.x < x0+width and y0 <= event.y < y0+height):
+            return
+        source = self.images['参照']
+        x = min(source.width-1, int((event.x-x0)*source.width/width))
+        y = min(source.height-1, int((event.y-y0)*source.height/height))
+        rgb = source.getpixel((x,y))[:3]
+        self.seed_label.configure(text=f'色選択の種: x={x}, y={y}  RGB={rgb}  |  select-color --x {x} --y {y}')
 
     def close(self):
         self.stop.set()
