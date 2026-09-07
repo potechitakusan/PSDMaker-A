@@ -9,10 +9,19 @@
 3. **画像解析より先に `start_preview.bat` が存在することを確認する。なければ復元する。** 利用者へ起動するファイルを伝え、`monitor --psd ... --job ...` で監視先を登録する。利用者が.batを開けば別プロセスの画面を表示できる状態にする。画面の起動待ちで解析を止める必要はない。
 4. `.venv/Scripts/python.exe` を使う。依存不足は `python scripts/bootstrap.py` で追加する。ユーザーはプロジェクト内の依存追加を許可済み。OSの権限やネットワーク承認が必要なら理由を説明する。
 
+## 任意の第2機能: 指定線画を着色する
+
+- 利用者が着色対象の線画を指定した場合だけ、`docs/COLORING_WORKFLOW.md`の着色工程を実行する。既存の画像分解から自動的に着色や別ポーズ生成を開始しない。明示された開発試験の模擬線画は別jobで扱い、通常入力と区別して記録する。
+- `prepare-coloring --lineart ... --source-job ... --job ...`で参照PSDのBase色と線画を準備。Pythonの領域一覧を目視し、semantic_planでパレットと意味を割当。座標塗りはfill-region、局所隙間補助はsplit-color-regionを使う。
+- 参照jobがない場合は、PSDに隣接した `coloring_reference.json` を `--source-reference` へ渡せる（`--source-job`とは排他）。partsの意味名・階層・coloring_notesを手掛かりに、指定線画の領域を新規に確認する。元のbbox・領域番号・左右の位置を新ポーズへコピーしない。
+- 下塗りはpaint-flats。任意のAI照明ガイドは全体画像から作り、prepare-lightingで位置合わせした実画像を確認。入力線画とパーツ形状を固定し、ガイドの明度を影・光に使う。
+- coloring_job.jsonがあるjobはbuild-coloredで保存する。参照PSDと指定線画を上書きしない。post-reviewとfinish-reviewによる事後チェックを必須とし、評価はPython着色結果からのPSD読み戻しと意味・見た目の判断を分ける。
+
 ## 画像からPSDを作る
 
 - **新規制作は `docs/ARTIST_WORKFLOW.md` の編集優先工程を使う。** 最初に描画レイヤー数の範囲（フォルダは別集計）と色統一の許容値0〜100をまとめて受け取る。既指定は再質問せず、お任せ・未指定は画像の意味素材数と色のばらつきから算出して根拠を記録する。
 - 意味計画を作ったら `configure-editing` を実行する。同素材と目視確認した左右パーツはpalette_idを共有し、group_pathで衣装→パーツ内にBase/Shadow/Highlight/色・模様を並べる。既定の線画はモノクロ、影・光はグレー。原画との差とPSD読み戻しの誤差を別々に報告する。
+- 第2機能への引き継ぎに備え、各partに一意のsemantic_id、意味が分かるdisplay_name、palette_id、group_pathを付け、曖昧な素材・固有色・左右差は任意のcoloring_notesへ記録する。build-compactのartistプロファイルはPSDの実Baseからcoloring_reference.jsonを自動出力する。既存jobはexport-coloring-referenceで書き出せる。PSDとJSONを一組で渡し、事後レビューの結果・制約も説明する。JSON生成だけで意味確認済みとは扱わない。
 - 背景単独画像を必ず確認する。混入は視覚確認した境界補助・select-color / assign-selectionで局所修正する。色だけを根拠に背景要素を前景と決めつけない。
 - **作業後は `docs/POST_REVIEW_CHECKLIST.md` に従い作業したAstra自身が事後確認する。** post-reviewで実PSDの色替え・線・背景・下塗りを生成し、全比較画像を開いて所見を記録、finish-reviewで確定する。数値合格だけでは完了にしない。再構築したらチェックもやり直す。
 

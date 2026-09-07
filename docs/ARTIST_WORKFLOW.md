@@ -28,6 +28,7 @@
   "display_name": "袖・左",
   "group_path": ["キャラクター", "衣装", "着物"],
   "palette_id": "kimono_pink",
+  "coloring_notes": "左右の袖と同じ布。花模様は別素材として確認する。",
   "regions": []
 }
 ```
@@ -92,3 +93,11 @@
 ```
 
 変更後はpartial_reviewに戻し、review-editingで結果を確認してからastra_reviewedへ進める。色選択や通常割当と同様、最終PSDの事後チェックもやり直す。
+
+## 第2機能へ渡すJSON
+
+artistのbuild-compactは、保存した実PSDから単色BaseのRGBを検証し、PSDの隣とjobへ `coloring_reference.json` を出力する。素材別RGBとsource_parts、各パーツのsemantic_id/display_name/palette_id/group_path、任意のcoloring_notes、実Baseレイヤーの階層パスと元画像bbox、画像サイズ、PSDと意味計画のSHA-256を含む。絶対パス・領域番号・マスクは含めない。仕様は [COLORING_REFERENCE.md](COLORING_REFERENCE.md)。
+
+coloring_notesには、目視確認した素材の区別や色の役割、曖昧な点を書く。個人情報やローカルパスを書かない。左右パーツの区別や共有色を次の線画でも再確認する。元画像bboxは参照位置の案内であり、新しい線画への塗り座標ではない。
+
+既存PSDは `export-coloring-reference --job work/<source>` で再構築せず書き出せる。PSD/計画変更がある場合は先に再構築する。受け渡しにはPSDとJSONの両方が必要で、事後レビューと制約の説明も行う。JSONだけで視覚品質を保証しない。

@@ -1,80 +1,57 @@
-# 仕様 v1
+# PsdMaker 仕様
 
-## 編集優先プロファイル（2nd concept対応）
+Codex Astraが画像の意味・素材・異常を判断し、ローカルPython CLIが全画素処理とPSD生成を行う。モデルは利用者の画面で選択し、別モデルやAPI契約を必須にしない。新規制作は編集優先工程を使う。
 
-新規制作のAgent手順は `docs/ARTIST_WORKFLOW.md`。従来compact計画との互換性を保ち、`configure-editing`でartistプロファイルへ移行する。利用者から描画枚数の範囲と色統一許容値0〜100を受け取り、お任せ・未指定は意味素材数と共有素材の色差から自動計算する。描画数・フォルダ数・合計を別記し、上限超過は保存前に拒否、下限未達は保存可能だが未達として扱う。
+## 第1機能：完成イラストからPSD
 
-同じpalette_idは共通の下塗り色。group_pathの階層下で各パーツにBase/Shadow/Highlight/色補正をまとめる。影・光のRGBはneutral/cool/warmの一定照明色、透明度は画素別。色統一は原画の塗りからのCIE76距離を許容値/5以内に制限する。新規設定のdetail_mode=relativeは残る色差をMultiply/Screen色補正へ分離し、Baseの変更に応答させる。意図した固有色だけpart.detail_mode=pigmentでNormalへ残せる。detail_mode未指定の旧計画は旧方式を維持する。既定線画は回収線RGBの輝度を全チャンネルに適用したモノクロ。新規設定のline_cleanupは、補正ガイドに裏付けされない点や塗り跡を塗り側へ戻し、モノクロ化前の合成RGBを保つ。線画の変更は塗りの許容値と別で記録・評価する。
+手順は [ARTIST_WORKFLOW.md](ARTIST_WORKFLOW.md) と [COMPACT_WORKFLOW.md](COMPACT_WORKFLOW.md)。線画がなければ画像生成機能で別ファイルへ作成する。分解前にサイズ・局所ずれを調べ、元絵を変形せず線画側を位置合わせする。補正前後の画像・数値・残る描き直し差を確認する。
 
-背景単独画像・疑わしい成分一覧を出力する。明るい背景を目視確認した場合だけbackground_cleanupを使い、近隣前景と背景色の比較で狭い境界を回収する。select-colorは原寸種座標、色差/RGB距離、4/8近傍/全体、色系統/HSV色相、source-partによる範囲制限を扱う。assign-selectionは入力一致を検証して再現条件を計画へ埋め込み、重複を拒否し、旧計画保存とpartial_reviewへの変更を行う。
+prepare-compactで線画ガイドを局所位置合わせし、元絵由来の線を回収する。Pythonの領域一覧をAstraが実際に開き、semantic_plan.jsonに意味・素材別パーツを割り当てる。未確認はheuristic/partial_reviewで、確認後だけastra_reviewedとする。領域は重複割当しない。
 
-評価は原画の品質基準を維持し、意図した編集結果editing_targetとのPSD読み戻しを独立測定する。後者はMAE≤0.5、最大チャンネル差≤3（0〜255）で検証する。編集用target/reportはハッシュを検証する。数値合格は意味分離や実アプリ確認の代用ではない。プレビューは線画・背景・配色も表示する。以下のレイヤー数・カラー線・役割別フォルダの記述は旧プロファイルの仕様。
+configure-editingはartistプロファイルを設定する。描画枚数の範囲と色統一許容値0〜100は、指定済みなら再質問せず、お任せ・未指定なら素材数と色のばらつきから決める。フォルダ数は別集計。上限超過は保存前に拒否し、下限未達は出力して未達と報告する。透明ダミーで枚数を増やさない。
 
-## 事後レビューと局所修正
+同じpalette_idは共通の単色Base。group_pathの階層内にパーツ別Base/Shadow/Highlight/必要な色補正を置く。色統一による塗り変更はCIE76距離で許容値/5以内。既定の線はモノクロ、影・光は一定グレーと画素別透明度。cool/warmの照明も指定できる。新規detail_mode=relativeはBaseに応答するMultiply/Screen色補正、意図した固有色だけpigmentでNormalへ残せる。
 
-`docs/POST_REVIEW_CHECKLIST.md`を作業後に必須確認する。artistのbuild/evaluateは数値合格でもpost_review_requiredで止まり、`post-review`が実PSDから全パレットの強い色替え、素材仮色、線/背景単独、暗背景、影/光OFFを生成する。黒・グレーも彩度と明度を上げ、色替えが見えないまま検査を通さない。PSDファイル自体は変更しない。
+line_cleanupは補正ガイドに裏付けされない点・塗り跡を塗り側へ戻し、モノクロ化前のRGB合成を保つ。線変更は塗りの許容値とは別に評価する。背景単独画像を必ず確認する。select-color/assign-selection、review-components/component_assignmentsは目視確認した範囲だけ局所修正し、計画をpartial_reviewへ戻す。色だけで背景要素を前景と決めない。
 
-Astraは10項目のstatus・所見・画像根拠を記入し、`finish-review`がPSD/計画/画像のハッシュ、全項目と数値評価の一致を検証する。未記入や古い根拠を拒否し、failはneeds_repair、limitationはcomplete_with_limitationsとして報告する。ハッシュ検証は視覚判断の正しさを保証せず、チェックリスト生成だけで確認済みとは扱わない。
+### 第2機能への引き継ぎ
 
-`review-components --geometry ID`または`--material ID`は連結成分IDと画像一覧を生成する。semantic_planのcomponent_assignmentsにkind/region/components/from/toを記入すると、同色の白目と髪などを局所的に別素材へ移せる。未知ID・重複・元パーツ不一致を拒否する。新規compact_version=2は線画変形の画像外端を最近傍の領域で補い、画面端を一律に背景へ落とさない。
+artistのbuild-compactは `coloring_reference.json` をPSD隣とjobに自動保存する。既存jobはexport-coloring-referenceで追加できる。実PSDから単色Base RGB、素材IDと対応パーツ、PSD内Base階層・bboxを記録し、意味計画からdisplay_name/group_path/任意のcoloring_notesを引き継ぐ。画像サイズ・PSDと計画のSHA-256を含む。元jobの絶対パス・領域番号・マスクは含めない。
 
-自動描画数の目安は前景素材数Nに対し2N+2〜5N+2（全てrelativeの場合）。pigment素材は上限を1ずつ減らす。実在する必要なレイヤーだけ保存し、フォルダ数は別に数える。
+PSDとJSONだけで第2機能の参照として使える。読込時にPSDハッシュ・サイズ・実Base色とパーツ対応を検証する。曖昧なBase名、非単色Base、共有ID内の色不一致を拒否する。書式と制約は [COLORING_REFERENCE.md](COLORING_REFERENCE.md)。JSONの意味記述と事後レビューの正しさはハッシュでは保証しない。
 
-## コンパクト工程と作業時間ログ
+## 第2機能：指定線画への着色
 
-- compactの意味計画には `recover_background_leaks`（既定true）がある。falseの場合は背景の色が暗いことだけを理由に前景へ再割当しない。前景と同色の独立した背景要素を保持する回帰テストがある。
+[COLORING_WORKFLOW.md](COLORING_WORKFLOW.md)に従う。利用者が指定した線画、または明示された開発試験の模擬線画だけを扱う。既存run/buildから自動起動しない。prepare-coloringはlineart/jobと、source-jobまたはsource-referenceのどちらか一方が必須。独立jobを使い、参照PSDと入力線画を上書きしない。
 
-- 線画未提供時は画像生成AI機能で線画を作り、原画像とは別に保存する。
-- 分解開始前に参照画像と線画のサイズ差・局所ずれを検査する。ずれがあれば補正し、補正前後の画像と数値を確認する。元絵の位置を優先し、残る差は明示する。
-- 指示後の最初の作業時刻（受信時刻が利用できる場合は受信時刻）から、成果物検証完了までの壁時計時間を記録する。jobのtiming.jsonへ開始・フェーズ・完了時刻、経過秒数と分秒を保存する。
+線画は白背景に合成した輝度を閾値1〜254（既定192）で二値化し、白を透明にした線を別保存する。PNG/JPG等を入力できる。隙間補助0〜64pxは塗り領域の境界だけに使い、PSDの線へ描き足さない。微小領域の閾値は1〜1000px（既定12）。
 
-## レイヤー構成
+領域のbbox・面積・Python算出seed_xy・画像端接触を保存する。Astraが全領域を目視し、意味パーツとpalette_idを割り当てる。fill-regionは座標塗り、split-color-regionは局所隙間補助で対象外IDを保持する。未知色・領域、重複、範囲外、未割当を拒否する。画像端への接触だけで背景とは決めない。
 
-目標は通常50〜100レイヤー。領域ごとにレイヤーを作らず、意味と素材ごとにBase/Shadow/Highlightへまとめる。入力の生成線画を局所位置合わせした後、元絵の輪郭位置と色を回収して二重線を避ける。色配列とマスクはPythonで生成する。グラデーションを必要以上に量子化せず、パーツ内の画素別Multiply/Screen係数を解く。
+paint-flatsは参照PSDの実Base RGBを厳密継承する。新しい線画のパーツは改めて分類し、元画像の領域ID・bboxをコピーしない。任意の全体AI照明案はprepare-lightingで位置合わせし、Astraが実画像と数値を確認する。線画は変形せず、ガイドの明度を固定色Multiply/Screenの透明度に使う。
 
-実装済みの詳細は `docs/COMPACT_WORKFLOW.md`。以下のv1記述は従来CLIに関するもので、局所位置補正・コンパクト分解は新工程で扱う。
+build-coloredは各パーツ内のBase/Shadow/Highlightと最上段の透明線画を保存する。描画上限は既定3N+2（Nは前景パーツ数）、max_pixel_layersで指定可能。線画、参照PSD・計画または参照JSON、処理配列、照明案の変更をハッシュで検出する。
 
-## 実行構成
+## 評価と事後レビュー
 
-Codex Astra + リポジトリのAGENTS.md + ローカルPython CLI。Astraは領域の意味と修正を判断し、Pythonは全画素処理を行う。APIキー、MCPサーバーは初版の必須条件にしない。
+第1機能の原画基準はRGB MAE≤4、SSIM≥0.95、平均CIEDE2000≤4、edge mismatch≤0.03。意図した編集目標からの実PSD読み戻しは別にMAE≤0.5、最大チャンネル差≤3（0〜255）で検証する。第2機能はPythonの着色目標からの読み戻しを同じMAE/最大差で検証し、別ポーズの原画やAI画像との一致を品質点数にしない。
 
-7フェーズ: 前処理 → 領域抽出 → Astraの意味分類 → レイヤー分解 → PSD保存 → 再構成評価 → 最大3回の局所修正。
+artistとcoloringは数値合格でもpost_review_requiredで止まる。post-reviewは実PSDの全パレットの強い色替え、素材仮色、線/背景単独、暗背景、影・光OFFを生成する。Astraが全比較画像を開き、10項目の所見・status・画像根拠を記入しfinish-reviewで確定する。未記入・古いPSD/計画/根拠・数値評価の不一致は拒否。failはneeds_repair、limitationはcomplete_with_limitations。再構築したら確認もやり直す。
 
-CLI: analyze / build / evaluate / run。補助: monitor / summary / repair / apply-repair / demo。
+数値・ハッシュ検証は視覚判断やPhotoshop/CLIP STUDIOの実アプリ検証の代用ではない。詳細は [POST_REVIEW_CHECKLIST.md](POST_REVIEW_CHECKLIST.md)。
 
-入力は8bit相当のRGB/RGBAイラストと白背景または透明背景の線画。v1はセル塗り対象。軽微な平行移動を探索し、線と参照画像の暗部の一致が改善した場合だけ採用する。サイズ差は線画を参照サイズへリサイズして記録する。半透明の完成画像はv2対象として明示的に拒否する。
+## 保存・再開・プレビュー
 
-## データ
+8bit相当RGB/RGBAイラストと白背景または透明線画を対象とする。完成画像の複雑な半透明は対象外。NumPy/Pillow等が画素・マスク・ブレンドを処理し、psd-toolsでPSDを一時保存・再読込検証してからos.replaceする。入力を全画面レイヤーにして最上段へ重ね、分解誤差を隠す処理はしない。
 
-入力SHA-256と抽出設定・処理バージョンからjob IDを作る。`work/<job_id>/` に正規化画像、soft line alpha、ラベル配列、PNGマスク、領域統計、contact sheet、layer_plan.json、レイヤーRGBA、PSD、評価を保存する。同じジョブは前処理・抽出を再利用。異なる入力で既存jobを上書きしない。
+work/jobに正規化入力、ハッシュ、配列、画像一覧、意味計画、レイヤーPNG、評価を保存する。異なる入力で既存jobを上書きしない。compact_job.jsonはbuild-compact、coloring_job.jsonはbuild-coloredで再構築する。旧schema 1用のanalyze/build/run/repair/apply-repairは互換性と基礎回帰試験用に維持するが、新規工程へ流用しない。
 
-Geometryは線の閉領域のConnected Componentsと近傍割当、ColorはGeometry内のLabクラスタリングと連結成分。領域ID、parent_id、bbox、centroid、pixel_area、mean/median RGB、mean Lab、dominant_colors、neighbor_ids、mask_pathを保存する。
+start_preview.batは画像解析前に存在を確認し、monitorで監視先を登録する。利用者が開けば別プロセスのTk画面を表示できる状態にする。監視はmtime_ns/size/file IDと安定待ちを使う。生成時ハッシュと一致するPSDは埋込み合成画像、変更されたPSDは再合成を表示。書込み途中や一時ロックでは最後の正常表示を保持し再試行する。
 
-機械的な初期計画は `classification_source: heuristic`。Astra確認後は `astra_reviewed`。`run` は初期計画でも最後まで動くが、意味分類済みとは表示しない。
+CLIはstatus.jsonとdocs/jobs/*.mdへ状態を保存する。開始・フェーズ・完了時刻と経過秒数・分秒を記録し、受信時刻がなければ最初の作業時刻を起点と明記する。判断はdocs/jobs/*-decisions.md、進捗はdocs/PROGRESS.md、次の操作はdocs/RESUME.mdへ記録する。
 
-PSD: Character内に下からBackground / Base / Shadows / Highlights / Lineart。BaseとLineartはNormal、影は数値ソルバーによるMultiply、光はNormal/Screenの比較。ブレンドは拡張可能な関数レジストリ。レイヤーPNGとPSDを同じデータから生成し、保存したPSDを再度開いて再構成する。生成した基本構造のPSDは、読み戻したPixelLayerのbbox内だけをNumPyで合成する。標準psd-tools合成との比較では8bit丸めによる最大1階調の差を許容する。
+input/work/output/backup/.tmp、docsのジョブ・ローカル状態は公開対象外。examplesは許可した作例のみ公開し、JPG/PSD/JSONのメタデータと意味記述も点検する。backupは実行・テストの依存にしない。
 
-評価: RGB MAE(0–255)、SSIM、CIEDE2000、エッジ不一致率。全体、Geometry、semantic part別。既定品質はMAE≤4、SSIM≥0.95、平均ΔE≤4、edge mismatch≤0.03。worst regionと局所修正用cropを保存。合格でない場合は品質未達として記録する。
+## 対象外
 
-## 別プロセスの進捗画面
-
-解析開始前から `start_preview.bat` を用意する。batは依存を整えpythonwでTkウィンドウを独立起動。既定は `docs/active_job.json` に従い、引数 `--psd` で任意のPSDを固定監視できる。未作成なら待機。
-
-更新検出はmtime_ns・size・ファイルIDを監視（0.5秒間隔＋0.5秒の安定待ち）。安定したファイルをバックグラウンドスレッドで読む。生成PSDのSHA-256がlayers.jsonの保存時ハッシュと一致する場合、psd-toolsが保存時に更新したPSD内の合成画像を表示する。この検証により、多数のレイヤーを更新のたびに再合成する待ち時間を減らす。外部で編集されたPSDやハッシュ未確認のPSDはpsd-toolsでレイヤーを再合成する。
-
-書き込み途中や一時ロックは最後の正常表示を保持して再試行。保存側は同じディレクトリに一時保存→os.replace。非常に短い間隔の連続保存は安定した最新状態へ集約される。画面はPSD、参照、差分を切替え、フェーズ・更新回数・レイヤー構造を表示する。
-
-ジョブ状態は機械用JSONに加え `docs/jobs/*.md` を各フェーズで自動更新。設計・進捗・再開手順は常にdocs内のmdに置く。
-
-## v1の境界と次の改善
-
-- 初期計画は最大面積の色領域をBaseとする機械推定。髪・肌・衣装の認識はAstraの視覚確認を必要とする。
-- 開いた線の領域漏れ、細かい色断片、元絵と異なる色/位置の線は誤差要因。グラデーションの一定色Shadow/Highlight近似は色むらを生じ得る。
-- repairは局所的な役割割当を変更する。Geometryの分割し直し、曲線の非剛体位置合わせ、線色再推定は実装対象外。
-- 1ジョブを複数の書き込みCLIから同時実行しない。プレビューは読み取り専用なので同時起動してよい。
-- MCP wrapperはCLIと実画像の品質を安定させてから追加する。v1では必須にせず未実装。
-
-## 参照資料
-
-- [CodexのAGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md): プロジェクト作業指示の入口。
-- [psd-tools layers API](https://psd-tools.readthedocs.io/en/latest/reference/psd_tools.api.layers.html): Group/PixelLayer生成。実装時はインストール済みAPIも検査する。
+隠れたパーツの描き足し、完全な隙間復元、Live2D用パーツ展開、ベクター線、特殊発光・厚塗りの完全分離、実ペイントアプリでの互換性保証は含まない。同じjobに複数の書込CLIを同時実行しない。プレビューは読取り専用なので併用できる。

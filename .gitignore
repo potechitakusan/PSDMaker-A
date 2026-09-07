@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 /work/
 /output/
+/backup/
 
 # Generated PSD files are private by default.
 *.psd
@@ -15,6 +16,13 @@ __pycache__/
 !/examples/output/
 /examples/output/*
 !/examples/output/output.psd
+!/examples/output/coloring_reference.json
+!/examples/coloring/
+/examples/coloring/*
+!/examples/coloring/lineart.jpg
+!/examples/coloring/preview.jpg
+!/examples/coloring/output.psd
+!/examples/README.md
 
 # User-provided illustrations and line art (never publish by default)
 /input/

@@ -28,8 +28,14 @@ CHECKS = {
 
 def checked_manifest(job):
     manifest = read_json(job/'layers.json')
-    if manifest.get('pipeline') != 'compact':
-        raise ValueError('Post-review requires a compact job')
+    if manifest.get('pipeline') not in ('compact','coloring'):
+        raise ValueError('Post-review requires a compact or coloring job')
+    if manifest.get('pipeline') == 'coloring':
+        from .coloring import load_job
+        _,_,_,plan,_=load_job(job)
+        lighting=plan.get('lighting')
+        if lighting and (digest(lighting['guide_path'])!=lighting['guide_hash'] or digest(job/'lighting_aligned.png')!=lighting['aligned_hash']):
+            raise ValueError('Lighting guide changed; rebuild before post-review')
     if digest(manifest['psd_path']) != manifest['psd_hash'] or digest(job/'semantic_plan.json') != manifest['semantic_plan_hash']:
         raise ValueError('PSD or semantic plan changed; rebuild before post-review')
     return manifest
@@ -84,7 +90,7 @@ def post_review(job):
         return picture
     reference=Image.open(job/'reference.png').convert('RGB')
     current=render('current')
-    panels=[('Reference',reference),('Saved PSD',current),
+    panels=[('Source palette flats' if manifest.get('pipeline')=='coloring' else 'Reference',reference),('Saved PSD',current),
             ('Base + ink',render('base',only=('Base','Background','Lineart'))),
             ('Ink alone',render('ink',only=('Lineart',))),
             ('Background alone',render('background',only=('Background',),background='#455264')),
@@ -174,6 +180,10 @@ def finish_review(job, assessment=None):
     if destination!=job:
         atomic_write(destination/'post_review_result.json',(job/'post_review_result.json').read_bytes())
         atomic_write(destination/'post_review.md','\n'.join(md)+'\n')
-    progress(job,phase,'Astra事後レビューを記録',next_action='未達があれば局所修正して再構築・事後チェック',
+    recorder=progress
+    if manifest.get('pipeline')=='coloring':
+        from .coloring import event
+        recorder=event
+    recorder(job,phase,'Astra事後レビューを記録',next_action='未達があれば局所修正して再構築・事後チェック',
              post_review_passed=result['passed'],post_review_limitations=limits)
     return {'job':str(job),'passed':result['passed'],'limitations':limits,'failed_checks':failed}

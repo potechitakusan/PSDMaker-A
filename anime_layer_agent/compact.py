@@ -408,6 +408,9 @@ def build_compact(job, output=None):
     export_psd(job,manifest,output)
     manifest.update(psd_hash=digest(output),psd_path=str(output))
     write_json(job/'layers.json',manifest)
+    if artist:
+        from .coloring_reference import export_coloring_reference
+        export_coloring_reference(job)
     result=evaluate(job)
     result.update(pixel_layers=len(layers),total_layers=total,psd=str(output))
     write_json(job/'compact_result.json',result)

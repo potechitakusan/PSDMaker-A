@@ -1,8 +1,8 @@
 # 実用レイヤー数のPSD工程
 
-**新規制作は [編集優先工程](ARTIST_WORKFLOW.md) を併用する。** prepare-compactと領域確認は本書の手順どおり。その後configure-editingで利用者のレイヤー範囲・色許容値を設定し、パーツ別階層、共有ベース色、モノクロ線へ進む。以下の50〜100項目と役割別フォルダは旧プロファイル用であり、編集優先時は描画枚数を別集計する。
+**新規制作は [編集優先工程](ARTIST_WORKFLOW.md) を併用する。** prepare-compactと領域確認は本書の手順どおり。その後configure-editingで利用者のレイヤー範囲・色許容値を設定し、パーツ別階層、共有ベース色、モノクロ線へ進む。描画枚数とフォルダ数は別集計する。
 
-通常のイラストを、元絵由来の線、意味／素材パーツ、パーツ内の下塗り・影・光へ整理する工程。目安は50〜100項目（描画レイヤー＋フォルダ）である。
+通常のイラストを、元絵由来の線、意味／素材パーツ、パーツ内の下塗り・影・光へ整理する工程。枚数は利用者の指定またはartistの自動予算に従う。
 
 ## 入力からの操作
 
@@ -39,7 +39,7 @@ geometry_reviewの各ページを画像ツールで確認し、`semantic_plan.js
 - `material_splits`: 同じGeometryに顔と髪等が混在するとき、Labクラスタリングで分ける。IDはGeometry番号×1000＋クラスタ番号。クラスタの色と位置を一覧画像で確認して割当する。
 - `keep_largest_in_geometry` / `island_fallback`: 色だけでは髪の光を肌と混同する場合など、対象Geometry内の連続性を使う。
 - `derived`: 既存パーツの近くで素材特性を使って細部を分離する。
-- `max_total_layers`: フォルダを含む上限。通常は100程度を指定する。超過した場合はPSD保存前に止まり、意味の近いパーツを統合する。余分な透明レイヤーを追加して下限を満たすことはしない。
+- `max_total_layers`: artistを設定しない既存job用のフォルダを含む上限。新規artistではconfigure-editingの描画予算を優先する。余分な透明レイヤーを追加して下限を満たすことはしない。
 - `recover_background_leaks`: 既定true。背景の暗部を前景への漏れとみなして回収する。床の影や家具が前景に混入する画像ではfalseにして背景領域を保持し、単独表示で確認する。
 
 境界は局所位置合わせ後のガイド領域を種に、元絵の色勾配に沿って調整する。線の隙間を通じた背景への漏れは、画像境界の背景色と近隣の素材色から補修する。小さな飛び地を除去し、ボタンのような本来小さいパーツは個別の閾値で保護する。
@@ -48,7 +48,7 @@ geometry_reviewの各ページを画像ツールで確認し、`semantic_plan.js
 
 背景以外のBaseはパーツ内の代表色で、原画全体を貼ったレイヤーではない。Shadowは画素ごとのMultiply係数と透明度、HighlightはScreen係数と透明度を数値的に求める。グラデーションや色変化を一枚のパーツレイヤー内に保ち、色断片の数だけレイヤーが増えるのを防ぐ。
 
-PSDの大枠はCharacter配下にBackground / Base / Shadows / Highlights / Lineart。日本語パーツ名はPSDのUnicode名として保存する。
+artistのPSDはパーツ別階層と最上段の線画。日本語パーツ名はPSDのUnicode名として保存する。artist未設定の既存jobは役割別フォルダ構成を保つ。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent build-compact --job work/<name> --output output/<name>/output.psd
@@ -63,4 +63,4 @@ PSDの大枠はCharacter配下にBackground / Base / Shadows / Highlights / Line
 
 ## 実用上の範囲
 
-これは元絵で見えている部分を編集しやすく分離したPSD。隠れている腕・髪等を描き足す処理やLive2D用の完全パーツ展開は行わない。線は元絵から回収した色付きラスター線であり、手描きの純粋な均一線画とは異なる。Photoshop / CLIP STUDIO PAINTの実アプリ上での確認は未実施。
+これは元絵で見えている部分を編集しやすく分離したPSD。隠れている腕・髪等を描き足す処理やLive2D用の完全パーツ展開は行わない。線は元絵から回収したラスター線で、新規artistはモノクロが既定。手描きの均一線画とは異なる。事後レビューはARTIST_WORKFLOWとPOST_REVIEW_CHECKLISTに従う。Photoshop / CLIP STUDIO PAINTの実アプリ上での確認は別途必要。

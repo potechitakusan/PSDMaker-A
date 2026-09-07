@@ -1,0 +1,829 @@
+{
+  "schema": 1,
+  "kind": "coloring_reference",
+  "psd_file": "output.psd",
+  "psd_hash": "0036c01351961d45a49b44d1dd1bb47e4198d35979644fbcae4459016002c18c",
+  "semantic_plan_hash": "9583ed8d99ee8a8f1e48f33a653845d04fc7157d2d1c2877e3bccb95acb83a81",
+  "size": [
+    840,
+    1232
+  ],
+  "bbox_convention": "source pixels; left, top, right, bottom; exclusive end",
+  "classification_source": "astra_reviewed",
+  "palettes": {
+    "white_fabric": {
+      "rgb": [
+        192,
+        183,
+        201
+      ],
+      "source_parts": [
+        "headdress",
+        "headband",
+        "collar_white",
+        "shoulder_frills",
+        "apron_chest",
+        "apron_waist",
+        "apron_skirt",
+        "apron_bow",
+        "cuff_front",
+        "cuff_right"
+      ]
+    },
+    "pink_hair": {
+      "rgb": [
+        214,
+        148,
+        168
+      ],
+      "source_parts": [
+        "hair_front",
+        "hair_back"
+      ]
+    },
+    "flower_pink": {
+      "rgb": [
+        249,
+        172,
+        194
+      ],
+      "source_parts": [
+        "flower_petals"
+      ]
+    },
+    "flower_center": {
+      "rgb": [
+        244,
+        189,
+        87
+      ],
+      "source_parts": [
+        "flower_center"
+      ]
+    },
+    "skin": {
+      "rgb": [
+        236,
+        195,
+        187
+      ],
+      "source_parts": [
+        "face",
+        "hand_front",
+        "hand_right"
+      ]
+    },
+    "iris_purple": {
+      "rgb": [
+        79,
+        43,
+        112
+      ],
+      "source_parts": [
+        "eyes"
+      ]
+    },
+    "black_kimono": {
+      "rgb": [
+        69,
+        62,
+        71
+      ],
+      "source_parts": [
+        "collar_black",
+        "kimono_front",
+        "kimono_right"
+      ]
+    },
+    "toy_cream": {
+      "rgb": [
+        229,
+        211,
+        196
+      ],
+      "source_parts": [
+        "toy_ears",
+        "toy_head",
+        "toy_body",
+        "toy_limbs"
+      ]
+    },
+    "toy_ear_pink": {
+      "rgb": [
+        195,
+        116,
+        138
+      ],
+      "source_parts": [
+        "toy_ear_inner"
+      ]
+    },
+    "toy_brown": {
+      "rgb": [
+        65,
+        21,
+        19
+      ],
+      "source_parts": [
+        "toy_eyes"
+      ]
+    },
+    "toy_ribbon": {
+      "rgb": [
+        171,
+        57,
+        101
+      ],
+      "source_parts": [
+        "toy_head_bow",
+        "toy_neck_bow"
+      ]
+    },
+    "sclera": {
+      "rgb": [
+        238,
+        227,
+        223
+      ],
+      "source_parts": [
+        "sclera"
+      ]
+    },
+    "toy_cheek": {
+      "rgb": [
+        251,
+        202,
+        199
+      ],
+      "source_parts": [
+        "toy_cheeks"
+      ]
+    }
+  },
+  "parts": [
+    {
+      "semantic_id": "headdress",
+      "display_name": "ヘッドドレス",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "ヘッドドレス [headdress]",
+        "ヘッドドレス_Base"
+      ],
+      "source_bbox": [
+        248,
+        0,
+        651,
+        215
+      ]
+    },
+    {
+      "semantic_id": "headband",
+      "display_name": "カチューシャ",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "カチューシャ [headband]",
+        "カチューシャ_Base"
+      ],
+      "source_bbox": [
+        282,
+        42,
+        597,
+        184
+      ]
+    },
+    {
+      "semantic_id": "hair_front",
+      "display_name": "前髪・横髪",
+      "palette_id": "pink_hair",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "前髪・横髪 [hair_front]",
+        "前髪・横髪_Base"
+      ],
+      "source_bbox": [
+        182,
+        59,
+        671,
+        557
+      ]
+    },
+    {
+      "semantic_id": "hair_back",
+      "display_name": "後ろ髪・長い毛束",
+      "palette_id": "pink_hair",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "後ろ髪・長い毛束 [hair_back]",
+        "後ろ髪・長い毛束_Base"
+      ],
+      "source_bbox": [
+        0,
+        11,
+        840,
+        1184
+      ]
+    },
+    {
+      "semantic_id": "flower_petals",
+      "display_name": "髪飾り・花びら",
+      "palette_id": "flower_pink",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "髪飾り・花びら [flower_petals]",
+        "髪飾り・花びら_Base"
+      ],
+      "source_bbox": [
+        198,
+        169,
+        311,
+        292
+      ]
+    },
+    {
+      "semantic_id": "flower_center",
+      "display_name": "髪飾り・花芯",
+      "palette_id": "flower_center",
+      "group_path": [
+        "キャラクター",
+        "髪・頭飾り"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "髪・頭飾り",
+        "髪飾り・花芯 [flower_center]",
+        "髪飾り・花芯_Base"
+      ],
+      "source_bbox": [
+        239,
+        212,
+        264,
+        237
+      ]
+    },
+    {
+      "semantic_id": "face",
+      "display_name": "顔・耳・首",
+      "palette_id": "skin",
+      "group_path": [
+        "キャラクター",
+        "顔"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "顔",
+        "顔・耳・首 [face]",
+        "顔・耳・首_Base"
+      ],
+      "source_bbox": [
+        231,
+        190,
+        579,
+        580
+      ]
+    },
+    {
+      "semantic_id": "eyes",
+      "display_name": "左右の瞳",
+      "palette_id": "iris_purple",
+      "group_path": [
+        "キャラクター",
+        "顔"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "顔",
+        "左右の瞳 [eyes]",
+        "左右の瞳_Base"
+      ],
+      "source_bbox": [
+        346,
+        290,
+        565,
+        394
+      ]
+    },
+    {
+      "semantic_id": "collar_white",
+      "display_name": "襟の白い縁",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "襟の白い縁 [collar_white]",
+        "襟の白い縁_Base"
+      ],
+      "source_bbox": [
+        266,
+        496,
+        514,
+        690
+      ]
+    },
+    {
+      "semantic_id": "collar_black",
+      "display_name": "黒い襟",
+      "palette_id": "black_kimono",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "黒い襟 [collar_black]",
+        "黒い襟_Base"
+      ],
+      "source_bbox": [
+        204,
+        512,
+        520,
+        697
+      ]
+    },
+    {
+      "semantic_id": "kimono_front",
+      "display_name": "着物・胴と手前袖",
+      "palette_id": "black_kimono",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物・胴と手前袖 [kimono_front]",
+        "着物・胴と手前袖_Base"
+      ],
+      "source_bbox": [
+        106,
+        603,
+        527,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "kimono_right",
+      "display_name": "着物・奥の袖",
+      "palette_id": "black_kimono",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物・奥の袖 [kimono_right]",
+        "着物・奥の袖_Base"
+      ],
+      "source_bbox": [
+        339,
+        843,
+        840,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "shoulder_frills",
+      "display_name": "肩のフリル・肩紐",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "肩のフリル・肩紐 [shoulder_frills]",
+        "肩のフリル・肩紐_Base"
+      ],
+      "source_bbox": [
+        66,
+        528,
+        550,
+        949
+      ]
+    },
+    {
+      "semantic_id": "apron_chest",
+      "display_name": "エプロン胸当て",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン胸当て [apron_chest]",
+        "エプロン胸当て_Base"
+      ],
+      "source_bbox": [
+        394,
+        682,
+        530,
+        929
+      ]
+    },
+    {
+      "semantic_id": "apron_waist",
+      "display_name": "エプロン腰帯",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン腰帯 [apron_waist]",
+        "エプロン腰帯_Base"
+      ],
+      "source_bbox": [
+        531,
+        900,
+        658,
+        1089
+      ]
+    },
+    {
+      "semantic_id": "apron_skirt",
+      "display_name": "エプロン裾",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン裾 [apron_skirt]",
+        "エプロン裾_Base"
+      ],
+      "source_bbox": [
+        521,
+        1046,
+        794,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "apron_bow",
+      "display_name": "背中の白いリボン",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "背中の白いリボン [apron_bow]",
+        "背中の白いリボン_Base"
+      ],
+      "source_bbox": [
+        9,
+        970,
+        757,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "cuff_front",
+      "display_name": "手前の袖口フリル",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "手前の袖口フリル [cuff_front]",
+        "手前の袖口フリル_Base"
+      ],
+      "source_bbox": [
+        454,
+        869,
+        761,
+        1101
+      ]
+    },
+    {
+      "semantic_id": "cuff_right",
+      "display_name": "奥の袖口フリル",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "奥の袖口フリル [cuff_right]",
+        "奥の袖口フリル_Base"
+      ],
+      "source_bbox": [
+        509,
+        919,
+        768,
+        1129
+      ]
+    },
+    {
+      "semantic_id": "hand_front",
+      "display_name": "手前の手・腕",
+      "palette_id": "skin",
+      "group_path": [
+        "キャラクター",
+        "手"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "手",
+        "手前の手・腕 [hand_front]",
+        "手前の手・腕_Base"
+      ],
+      "source_bbox": [
+        477,
+        695,
+        718,
+        958
+      ]
+    },
+    {
+      "semantic_id": "hand_right",
+      "display_name": "奥の手・腕",
+      "palette_id": "skin",
+      "group_path": [
+        "キャラクター",
+        "手"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "手",
+        "奥の手・腕 [hand_right]",
+        "奥の手・腕_Base"
+      ],
+      "source_bbox": [
+        633,
+        737,
+        736,
+        1028
+      ]
+    },
+    {
+      "semantic_id": "toy_ears",
+      "display_name": "うさぎ・耳の外側",
+      "palette_id": "toy_cream",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・耳の外側 [toy_ears]",
+        "うさぎ・耳の外側_Base"
+      ],
+      "source_bbox": [
+        604,
+        408,
+        840,
+        578
+      ]
+    },
+    {
+      "semantic_id": "toy_ear_inner",
+      "display_name": "うさぎ・耳の内側",
+      "palette_id": "toy_ear_pink",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・耳の内側 [toy_ear_inner]",
+        "うさぎ・耳の内側_Base"
+      ],
+      "source_bbox": [
+        642,
+        449,
+        840,
+        594
+      ]
+    },
+    {
+      "semantic_id": "toy_head",
+      "display_name": "うさぎ・顔",
+      "palette_id": "toy_cream",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・顔 [toy_head]",
+        "うさぎ・顔_Base"
+      ],
+      "source_bbox": [
+        505,
+        537,
+        736,
+        728
+      ]
+    },
+    {
+      "semantic_id": "toy_eyes",
+      "display_name": "うさぎ・目と鼻",
+      "palette_id": "toy_brown",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・目と鼻 [toy_eyes]",
+        "うさぎ・目と鼻_Base"
+      ],
+      "source_bbox": [
+        639,
+        605,
+        724,
+        669
+      ]
+    },
+    {
+      "semantic_id": "toy_head_bow",
+      "display_name": "うさぎ・耳のリボン",
+      "palette_id": "toy_ribbon",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・耳のリボン [toy_head_bow]",
+        "うさぎ・耳のリボン_Base"
+      ],
+      "source_bbox": [
+        657,
+        521,
+        744,
+        613
+      ]
+    },
+    {
+      "semantic_id": "toy_neck_bow",
+      "display_name": "うさぎ・胸のリボン",
+      "palette_id": "toy_ribbon",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・胸のリボン [toy_neck_bow]",
+        "うさぎ・胸のリボン_Base"
+      ],
+      "source_bbox": [
+        600,
+        690,
+        690,
+        776
+      ]
+    },
+    {
+      "semantic_id": "toy_body",
+      "display_name": "うさぎ・胴",
+      "palette_id": "toy_cream",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・胴 [toy_body]",
+        "うさぎ・胴_Base"
+      ],
+      "source_bbox": [
+        520,
+        691,
+        696,
+        878
+      ]
+    },
+    {
+      "semantic_id": "toy_limbs",
+      "display_name": "うさぎ・手足",
+      "palette_id": "toy_cream",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・手足 [toy_limbs]",
+        "うさぎ・手足_Base"
+      ],
+      "source_bbox": [
+        554,
+        716,
+        759,
+        949
+      ]
+    },
+    {
+      "semantic_id": "sclera",
+      "display_name": "左右の白目",
+      "palette_id": "sclera",
+      "group_path": [
+        "キャラクター",
+        "顔"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "顔",
+        "左右の白目 [sclera]",
+        "左右の白目_Base"
+      ],
+      "source_bbox": [
+        335,
+        307,
+        553,
+        400
+      ]
+    },
+    {
+      "semantic_id": "toy_cheeks",
+      "display_name": "うさぎ・頬",
+      "palette_id": "toy_cheek",
+      "group_path": [
+        "ぬいぐるみ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "ぬいぐるみ",
+        "うさぎ・頬 [toy_cheeks]",
+        "うさぎ・頬_Base"
+      ],
+      "source_bbox": [
+        592,
+        617,
+        735,
+        709
+      ]
+    }
+  ]
+}

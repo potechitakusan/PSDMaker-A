@@ -89,6 +89,42 @@ def parser():
     finish = commands.add_parser('finish-review',help='Validate and record completed visual self-review')
     finish.add_argument('--job',required=True)
     finish.add_argument('--assessment')
+    binary = commands.add_parser('binarize-lineart', help='Save binary or transparent ink to a separate file')
+    binary.add_argument('--input', required=True)
+    binary.add_argument('--output', required=True)
+    binary.add_argument('--threshold', type=int, default=192)
+    binary.add_argument('--transparent', action='store_true')
+    color = commands.add_parser('prepare-coloring', help='Opt-in coloring: explicit input lineart and source PSD job required')
+    color.add_argument('--lineart', required=True)
+    color_source = color.add_mutually_exclusive_group(required=True)
+    color_source.add_argument('--source-job')
+    color_source.add_argument('--source-reference', help='Portable coloring_reference.json beside its PSD')
+    color.add_argument('--job', required=True)
+    color.add_argument('--threshold', type=int, default=192)
+    color.add_argument('--gap-close', type=int, default=3)
+    color.add_argument('--min-area', type=int, default=12)
+    fill = commands.add_parser('fill-region', help='Color the enclosed region at an explicit seed')
+    fill.add_argument('--job', required=True)
+    fill.add_argument('--x', type=int, required=True)
+    fill.add_argument('--y', type=int, required=True)
+    fill.add_argument('--to', required=True)
+    fill.add_argument('--palette-id')
+    fill.add_argument('--display-name')
+    flats = commands.add_parser('paint-flats')
+    flats.add_argument('--job', required=True)
+    split = commands.add_parser('split-color-region', help='Close larger gaps inside one region, retaining other IDs')
+    split.add_argument('--job', required=True)
+    split.add_argument('--region', type=int, required=True)
+    split.add_argument('--gap-close', type=int, default=16)
+    lighting = commands.add_parser('prepare-lighting', help='Align a whole-image AI lighting guide to the fixed input lineart')
+    lighting.add_argument('--job', required=True)
+    lighting.add_argument('--image', required=True)
+    lighting.add_argument('--max-shift', type=int, default=12)
+    colored = commands.add_parser('build-colored', help='Build the opt-in coloring PSD; preserve source PSD and input ink')
+    colored.add_argument('--job', required=True)
+    colored.add_argument('--output')
+    reference = commands.add_parser('export-coloring-reference', help='Export portable palette and part hints from a verified source PSD')
+    reference.add_argument('--job', required=True)
     return main
 
 
@@ -96,7 +132,13 @@ def main():
     args = vars(parser().parse_args())
     command = args.pop("command")
     try:
-        if command in ("prepare-compact", "build-compact", "review-materials"):
+        if command == 'export-coloring-reference':
+            from .coloring_reference import export_coloring_reference
+            function = export_coloring_reference
+        elif command in ('binarize-lineart','prepare-coloring','fill-region','paint-flats','prepare-lighting','build-colored','split-color-region'):
+            from . import coloring
+            function = getattr(coloring,command.replace('-','_'))
+        elif command in ("prepare-compact", "build-compact", "review-materials"):
             from . import compact
             function = getattr(compact,command.replace('-','_'))
         elif command in ('configure-editing', 'review-editing'):

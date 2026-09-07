@@ -34,7 +34,7 @@ def main():
         if window.updates >= 2:
             root.update_idletasks()
             required = ['PSD','参照','差分']
-            if active.get('job') and (Path(active['job'])/'editing_report.json').exists():
+            if active.get('job') and any((Path(active['job'])/name).exists() for name in ('editing_report.json','coloring_job.json')):
                 required += ['線画','背景','配色']
             if not all(mode in window.images for mode in required):
                 if elapsed < 25:
