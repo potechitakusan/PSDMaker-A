@@ -24,6 +24,7 @@
 - `prepare-coloring --lineart ... --source-job ... --job ...`で参照PSDのBase色と線画を準備。Pythonの領域一覧を目視し、semantic_planでパレットと意味を割当。座標塗りはfill-region、局所隙間補助はsplit-color-regionを使う。
 - 参照jobがない場合は、PSDに隣接した `coloring_reference.json` を `--source-reference` へ渡せる（`--source-job`とは排他）。partsの意味名・階層・coloring_notesを手掛かりに、指定線画の領域を新規に確認する。元のbbox・領域番号・左右の位置を新ポーズへコピーしない。
 - 下塗りはpaint-flats。任意のAI照明ガイドは全体画像から作り、prepare-lightingで位置合わせした実画像を確認。入力線画とパーツ形状を固定し、ガイドの明度を影・光に使う。
+- 照明案は下塗りとsource_appearance.pngの両方を参照。事後確認ではtones比較で髪・肌・白布の明部と色味を確認し、Base一致だけで原画の印象を再現したとしない。
 - coloring_job.jsonがあるjobはbuild-coloredで保存する。参照PSDと指定線画を上書きしない。post-reviewとfinish-reviewによる事後チェックを必須とし、評価はPython着色結果からのPSD読み戻しと意味・見た目の判断を分ける。
 
 ## 画像からPSDを作る

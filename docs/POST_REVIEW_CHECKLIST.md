@@ -7,7 +7,7 @@ PSD構築と数値評価の後、作業したAstra自身が必ず実施する。
 ## 実施手順
 
 1. `post-review --job work/<name>`を実行する。保存した実PSDから色替え、下塗り、線、背景、影/光OFFの画像を生成し、`docs/jobs/<name>-post-review.md`に未確認項目を作る。
-2. `post_review/overview.png`、全てのrecolor_sheet、material_masks.png、必要な原寸・局所画像を画像ツールで開く。
+2. `post_review/overview.png`、全てのrecolor_sheet、material_masks.png、必要な原寸・局所画像を画像ツールで開く。着色ではtones_overview.pngとtones_swatches.pngも開き、髪・肌・白布の普通の明部を参照完成色と比較する。motifs_lightingのevidenceに両画像を含める。
 3. 下表の10項目を確認し、`post_review_assessment.json`へstatus（pass/limitation/fail）、具体的な所見、実際に確認したevidence相対パスを記入する。曖昧な見た目を自動推定で確認済みにしない。
 4. 修正できる問題は意味計画や局所素材分離を直してbuild-compact。最大3回を目安に局所修正し、再構築後にpost-reviewをやり直す。旧PSDの評価を流用しない。
 5. `finish-review --job work/<name>`で記録を確定する。未記入、画像/PSD/計画の変更、根拠なしは拒否される。failは未達、limitationは制約付き完了として利用者へ具体的に伝える。

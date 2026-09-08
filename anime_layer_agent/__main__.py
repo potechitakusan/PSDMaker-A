@@ -125,6 +125,8 @@ def parser():
     colored.add_argument('--output')
     reference = commands.add_parser('export-coloring-reference', help='Export portable palette and part hints from a verified source PSD')
     reference.add_argument('--job', required=True)
+    tones = commands.add_parser('review-coloring-tones', help='Compare source and colored PSD material lightness/chroma')
+    tones.add_argument('--job', required=True)
     return main
 
 
@@ -132,7 +134,10 @@ def main():
     args = vars(parser().parse_args())
     command = args.pop("command")
     try:
-        if command == 'export-coloring-reference':
+        if command == 'review-coloring-tones':
+            from .tone_review import review_coloring_tones
+            function = review_coloring_tones
+        elif command == 'export-coloring-reference':
             from .coloring_reference import export_coloring_reference
             function = export_coloring_reference
         elif command in ('binarize-lineart','prepare-coloring','fill-region','paint-flats','prepare-lighting','build-colored','split-color-region'):

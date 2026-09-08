@@ -168,6 +168,8 @@ def prepare_coloring(lineart, source_job=None, job=None, threshold=192, gap_clos
     save_image(Image.fromarray(np.uint8(~barriers)*255),job/'fill_barriers.png')
     np.savez_compressed(job/'coloring_arrays.npz',ink=ink,barriers=barriers,regions=labels)
     write_json(job/'source_palette.json',palette)
+    from .tone_review import source_appearance
+    source_appearance(palette,job)
     swatches=Image.new('RGB',(700,40*len(palette['palettes'])+20),'white')
     draw=ImageDraw.Draw(swatches)
     for i,(key,value) in enumerate(palette['palettes'].items()):

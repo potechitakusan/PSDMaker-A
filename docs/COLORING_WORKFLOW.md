@@ -67,7 +67,11 @@ fill-regionはその座標が属する閉領域を割り当て、flat_preview.pn
 
 ## 任意の影・光
 
-flat_preview.png全体を内蔵の画像生成AIへ1回渡し、元の輪郭・ポーズ・配色を維持した照明案を作る。画素ごとのLLM指示やパーツごとの大量生成は不要。CLIは画像生成APIを自動呼出ししない。照明案を別ファイルに保存し、実画像を開く。
+prepare-coloringが実参照PSDから保存するsource_appearance.png（完成色）とflat_preview.png（新ポーズ）を実際に開き、両方を内蔵画像生成AIへ渡して照明案を作る。元絵が利用可能なら併せて印象を確認する。参照の輪郭・ポーズはコピーせず、新線画の形を維持する。Base色だけでは明るい髪・白布・肌の色味を再現できないため、以下を生成指示へ含める。
+
+> 完成色の参照画像から、髪・肌・白布の通常の明部の明るさと色味、影とのコントラストを引き継ぐ。新ポーズの輪郭・線・素材配置を固定する。白布を灰紫に沈めず、淡い髪を濃い色にせず、肌を白く脱色しない。全体一律の明るさ変更は避け、参照画像のポーズは移さない。
+
+画素ごとのLLM指示やパーツごとの大量生成は不要。CLIは画像生成APIを自動呼出ししない。照明案は別ファイルに保存する。旧jobではreview-coloring-tonesがpost_review/source_appearance.pngを作るので参照できる。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent prepare-lighting --job work/<name> --image work/<name>/lighting_guide.png --max-shift 8
@@ -78,6 +82,14 @@ flat_preview.png全体を内蔵の画像生成AIへ1回渡し、元の輪郭・�
 lighting.strengthは0〜2、temperatureはneutral/cool/warm。ガイドの明度だけを使い、元のパーツマスク内に一定照明色のShadow（Multiply）とHighlight（Screen）を作る。ガイドの色・線・形をPSDへ貼り付けない。元線周辺の暗さは近い同素材の内側で補間し、影への二重線混入を抑える。再描画差や細いパーツの陰影には限界があるため、目視確認と局所修正を行う。
 
 Base・線画・割当を変えた場合は、下塗りから照明ガイドを作り直して確認する。入力やガイドのハッシュ不一致を拒否する。
+
+## 元絵の印象を確認する
+
+post-reviewは実参照PSDと着色PSDの完成色を素材別に比較し、tones_overview.png、tones_swatches.png、tones.jsonを生成する。単独実行は`review-coloring-tones --job work/<name>`。同じpalette_idの内側画素を使い、明度の40〜60%、60〜80%、80〜95%帯でRGB・L*・C*を比較する。全体平均・Base一致・読み戻し合格だけで印象が近いとしない。
+
+髪・肌・白布は原寸の普通の明部も確認する。L*またはC*の差が3以上なら注意表示するが、別ポーズの面積比や照明差もあるため自動不合格にはしない。全ての数値はsRGB/D65仮定で、領域の明暗順位は物理的な光の分類ではない。
+
+意図しない暗さ・色抜けは、対象素材と参照完成色を指定して照明ガイドを局所的に再調整し、位置合わせ→build-colored→post-reviewをやり直す。全体のlighting.strengthを一律に上げて顔まで明るくしない。ガイド色を使わない現行方式で残る色差はlimitationとして記録する。motifs_lightingに比較2画像の根拠と素材別所見を必ず残す。
 
 ## PSD保存と事後チェック
 

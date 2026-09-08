@@ -30,6 +30,8 @@ PSDとJSONだけで第2機能の参照として使える。読込時にPSDハッ
 
 paint-flatsは参照PSDの実Base RGBを厳密継承する。新しい線画のパーツは改めて分類し、元画像の領域ID・bboxをコピーしない。任意の全体AI照明案はprepare-lightingで位置合わせし、Astraが実画像と数値を確認する。線画は変形せず、ガイドの明度を固定色Multiply/Screenの透明度に使う。
 
+prepare-coloringは実参照PSDのsource_appearance.pngと素材別の明度・色味を保存する。照明案には下塗りと参照完成色の両方を渡す。post-review（単独ではreview-coloring-tones）は両PSDの素材内側の明度40〜60/60〜80/80〜95%帯のRGB・L*・C*を比較し、差3以上を注意表示する。統計的比較は別ポーズの一致点数や自動合否ではない。finish-reviewはmotifs_lightingに完成色比較・色見本画像の根拠を必須とする。旧着色jobの再確定はpost-reviewを再実行する。Base一致だけで印象の一致とは扱わない。
+
 build-coloredは各パーツ内のBase/Shadow/Highlightと最上段の透明線画を保存する。描画上限は既定3N+2（Nは前景パーツ数）、max_pixel_layersで指定可能。線画、参照PSD・計画または参照JSON、処理配列、照明案の変更をハッシュで検出する。
 
 ## 評価と事後レビュー

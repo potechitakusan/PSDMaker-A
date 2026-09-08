@@ -121,6 +121,10 @@ def post_review(job):
     # Optional for fixtures and old jobs, required visually by the workflow.
     files += [path for path in (job/'alignment_comparison.png', job/'background_only.png') if path.exists()]
     files += sorted(job.glob('semantic_review_*.png'))
+    if manifest.get('pipeline') == 'coloring':
+        from .tone_review import review_coloring_tones
+        review_coloring_tones(job)
+        files += [folder/name for name in ('tones_overview.png','tones_swatches.png','tones.json')]
     assert digest(manifest['psd_path'])==manifest['psd_hash']
     context={key:manifest[key] for key in ('psd_hash','semantic_plan_hash')}
     context['evidence_hashes']={path.relative_to(job).as_posix():digest(path) for path in files}
@@ -156,6 +160,12 @@ def finish_review(job, assessment=None):
     checks=record.get('checks',{})
     if set(checks)!=set(CHECKS):
         raise ValueError('Every checklist item is required')
+    if manifest.get('pipeline') == 'coloring':
+        required={'post_review/tones_overview.png','post_review/tones_swatches.png'}
+        if not required.issubset(context['evidence_hashes']):
+            raise ValueError('Tone comparison missing; run post-review again')
+        if not required.issubset(checks['motifs_lighting'].get('evidence',[])):
+            raise ValueError('Review source/colored tones in motifs_lighting')
     for key,check in checks.items():
         if check.get('status') not in ('pass','limitation','fail') or not str(check.get('notes','')).strip():
             raise ValueError(f'Unreviewed checklist item: {key}')

@@ -1,5 +1,6 @@
 """Portable handoff must work without the source job or its masks."""
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -60,6 +61,8 @@ def test_psd_and_json_alone_preserve_hints_and_build_new_drawing(tmp_path, porta
     job = tmp_path / 'colored'
     coloring.prepare_coloring(new_drawing(tmp_path), job=job, source_reference=portable, gap_close=0)
     loaded = read_json(job / 'source_palette.json')
+    assert (job / 'source_appearance.png').exists()
+    assert read_json(job / 'source_appearance.json')['materials']['fabric']['status'] == 'measured'
     assert loaded['parts'] == reference['parts']
     assert 'source_job' not in loaded
     coloring.fill_region(job, 0, 0, 'background')
@@ -69,6 +72,10 @@ def test_psd_and_json_alone_preserve_hints_and_build_new_drawing(tmp_path, porta
     write_json(job / 'semantic_plan.json', plan)
     result = coloring.build_colored(job)
     assert result['passed'] and result['input_ink_preserved']
+    from anime_layer_agent.tone_review import review_coloring_tones
+    tones = review_coloring_tones(job)
+    assert 'fabric' in read_json(tones['report'])['materials']
+    assert Path(tones['swatches']).exists()
     psd = PSDImage.open(result['psd'])
     base = next(p for p in psd.descendants() if p.name == '衣装_Base')
     rgba = np.asarray(base.topil().convert('RGBA'))

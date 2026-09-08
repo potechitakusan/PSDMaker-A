@@ -83,6 +83,10 @@ def test_coloring_preserves_actual_source_palette_ink_and_old_job(tmp_path,sourc
     for check in assessment['checks'].values():
         check.update(status='pass',notes='Synthetic fixture validation only',evidence=['post_review/overview.png'])
     write_json(job/'post_review_assessment.json',assessment)
+    with pytest.raises(ValueError,match='tones'):
+        finish_review(job)
+    assessment['checks']['motifs_lighting']['evidence'] += ['post_review/tones_overview.png','post_review/tones_swatches.png']
+    write_json(job/'post_review_assessment.json',assessment)
     assert finish_review(job)['passed']
     assert (job/'time_log.md').exists() and (tmp_path/'output/time_log.md').exists()
     with pytest.raises(ValueError,match='source inputs'):coloring.build_colored(job,source/'output.psd')
