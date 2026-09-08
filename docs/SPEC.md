@@ -42,6 +42,8 @@ artistとcoloringは数値合格でもpost_review_requiredで止まる。post-re
 
 ## 保存・再開・プレビュー
 
+トークン節約はAGENTS.mdの「トークン節約と品質維持」に従い、速度より重複処理・不要な読込と出力の削減を優先する。通常は単独実行、委任は利用者の明示依頼時のみ。品質基準・全画像確認・再構築後の事後レビューは維持する。採否とAPI設定の適用範囲は[TOKEN_POLICY.md](TOKEN_POLICY.md)に記録する。
+
 8bit相当RGB/RGBAイラストと白背景または透明線画を対象とする。完成画像の複雑な半透明は対象外。NumPy/Pillow等が画素・マスク・ブレンドを処理し、psd-toolsでPSDを一時保存・再読込検証してからos.replaceする。入力を全画面レイヤーにして最上段へ重ね、分解誤差を隠す処理はしない。
 
 work/jobに正規化入力、ハッシュ、配列、画像一覧、意味計画、レイヤーPNG、評価を保存する。異なる入力で既存jobを上書きしない。compact_job.jsonはbuild-compact、coloring_job.jsonはbuild-coloredで再構築する。旧schema 1用のanalyze/build/run/repair/apply-repairは互換性と基礎回帰試験用に維持するが、新規工程へ流用しない。
