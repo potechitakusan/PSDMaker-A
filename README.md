@@ -40,7 +40,7 @@ Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の�
 - [第2機能の線画JPG](examples/coloring/lineart.jpg) ／ [着色PSD](examples/coloring/output.psd)
 - [作例の仕様・検証結果・制約](examples/README.md)
 
-第2機能の作例は開発試験用に生成した線画を使い、参照PSDのBase色とAI照明案から着色したものです。JPGのEXIF/XMP・コメント・生成情報は除去しています。細い線の途切れや照明の細部ずれが残り、制作実務にそのまま使える品質を保証するものではありません。
+第2機能の作例は開発試験用に生成した線画を使い、参照PSDのBase色、元絵の明暗幅（tones）とAI照明案の明度から着色したものです。JPGのEXIF/XMP・コメント・生成情報は除去しています。細い線の途切れや照明の細部ずれが残り、制作実務にそのまま使える品質を保証するものではありません。
 
 ## セットアップ
 

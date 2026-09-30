@@ -79,7 +79,7 @@ prepare-coloringが実参照PSDから保存するsource_appearance.png（完成�
 
 入力の線画は固定し、照明ガイド側をリサイズ・局所補正する。alignment_comparison.pngとlighting_alignment.jsonを確認する。エッジ距離には陰影境界も含むので、輪郭誤差や合格の自動判定として扱わない。確認後、semantic_planのlighting.reviewed=trueと具体的なnotesを記入する。
 
-lighting.strengthは0〜2、temperatureはneutral/cool/warm。ガイドの明度だけを使い、元のパーツマスク内に一定照明色のShadow（Multiply）とHighlight（Screen）を作る。ガイドの色・線・形をPSDへ貼り付けない。元線周辺の暗さは近い同素材の内側で補間し、影への二重線混入を抑える。再描画差や細いパーツの陰影には限界があるため、目視確認と局所修正を行う。
+lighting.strengthは0〜2。ガイドの明度だけを使い、元のパーツマスク内にShadow（Multiply）とHighlight（Screen）を作る。lighting.color_modelの既定は、参照にtonesがあれば`source_tones`。素材ごとに不透明度100%で元絵の暗部（shadow帯）と最明部（peak帯）に届く色を使うため、白布・淡い髪・肌が灰色に沈まない。`neutral`は一定グレー（temperature=neutral/cool/warm）で、旧jobや色替えを主目的にする場合に使う。source_tonesの影・光色は元Base向けなので、Baseを大きく色替えしたら影色も確認する。analysis.jsonのtone_reach_warningsに出た素材は、光を最大にしても元絵の明部に届かない。照明案全体が暗い・明るい、または旧着色から作った案のように明部が頭打ちなら`lighting.tone_mapping: source_levels`を指定する。明暗の位置と強弱は案のまま、素材ごとの中間調・明部の明るさを元絵へ合わせる（倍率0.5〜2）。ガイドの色・線・形をPSDへ貼り付けない。元線周辺の暗さは近い同素材の内側で補間し、影への二重線混入を抑える。再描画差や細いパーツの陰影には限界があるため、目視確認と局所修正を行う。
 
 Base・線画・割当を変えた場合は、下塗りから照明ガイドを作り直して確認する。入力やガイドのハッシュ不一致を拒否する。
 

@@ -120,3 +120,16 @@ def test_api_rejects_both_or_neither_source(tmp_path):
     for options in [{}, dict(source_job='old', source_reference='portable')]:
         with pytest.raises(ValueError, match='exactly one'):
             coloring.prepare_coloring('unused.png', job=tmp_path / 'new', **options)
+
+
+def test_exported_tones_come_from_original_and_invalid_tones_rejected(portable):
+    reference = read_json(portable)
+    tones = reference['palettes']['fabric']['tones']
+    assert tones['source'] == 'original_underlying'
+    assert {'shadow', 'bright', 'peak'} <= set(tones['bands'])
+    assert tones['bands']['shadow']['L'] <= tones['bands']['peak']['L']
+    load_coloring_reference(portable)
+    tones['bands']['peak']['rgb'] = [300, 0, 0]
+    write_json(portable, reference)
+    with pytest.raises(ValueError, match='Invalid palette tones'):
+        load_coloring_reference(portable)

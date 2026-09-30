@@ -24,6 +24,18 @@ def solid_rgb(layer):
     return colors[0].tolist()
 
 
+def check_tones(tones):
+    """Optional numeric ramp (0..255 RGB per band); descriptive data, not a mask."""
+    bands = tones.get('bands') if isinstance(tones, dict) else None
+    if not isinstance(bands, dict) or not bands:
+        raise ValueError('Invalid palette tones')
+    for band in bands.values():
+        rgb = band.get('rgb') if isinstance(band, dict) else None
+        if not isinstance(rgb, list) or len(rgb) != 3 or any(
+                not isinstance(c, (int, float)) or not 0 <= c <= 255 for c in rgb):
+            raise ValueError('Invalid palette tones')
+
+
 def export_coloring_reference(job):
     """Export only reusable metadata; never copy masks, local paths or region IDs."""
     job = Path(job).resolve()
@@ -59,6 +71,13 @@ def export_coloring_reference(job):
             source_bbox=list(layer.bbox)))
     if not parts:
         raise ValueError('Source PSD has no foreground Base layers')
+    # Base is the dominant (often shaded) color; the ramp tells a new drawing
+    # how bright and saturated the finished material actually looks.
+    from .tone_review import original_tones
+    tones = original_tones(job, psd, parts) or {}
+    for key, value in tones.items():
+        if value['status'] == 'measured':
+            palettes[key]['tones'] = value
     reference = dict(schema=1, kind='coloring_reference', psd_file=psd_path.name,
         psd_hash=manifest['psd_hash'], semantic_plan_hash=manifest['semantic_plan_hash'],
         size=list(psd.size), bbox_convention='source pixels; left, top, right, bottom; exclusive end',
@@ -97,6 +116,8 @@ def load_coloring_reference(path):
         palette = reference['palettes'][part['palette_id']]
         if layer is None or solid_rgb(layer) != palette['rgb'] or sid not in palette['source_parts']:
             raise ValueError('Reference palette does not match the actual PSD Base')
+        if 'tones' in palette:
+            check_tones(palette['tones'])
     expected = {key: sorted(p['semantic_id'] for p in reference['parts'] if p['palette_id'] == key)
                 for key in reference['palettes']}
     if not seen or any(not ids or ids != sorted(reference['palettes'][key]['source_parts']) for key, ids in expected.items()):

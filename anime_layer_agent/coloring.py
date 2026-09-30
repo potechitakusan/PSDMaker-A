@@ -140,6 +140,9 @@ def source_palette(source_job):
         parts.append(dict(semantic_id=part['semantic_id'],display_name=part.get('display_name',part['semantic_id']),
             palette_id=key,group_path=part.get('group_path',[]),coloring_notes=part.get('coloring_notes',''),
             base_layer_path=layer_path(pixels[name]),source_bbox=list(pixels[name].bbox)))
+    from .tone_review import original_tones
+    for key,value in (original_tones(job,psd,parts) or {}).items():
+        if value['status']=='measured':palettes[key]['tones']=value
     return dict(source_job=str(job),psd_path=manifest['psd_path'],psd_hash=manifest['psd_hash'],
                 semantic_plan_hash=manifest['semantic_plan_hash'],palettes=palettes,parts=parts)
 
@@ -356,10 +359,45 @@ def prepare_lighting(job,image,max_shift=12):
     write_json(job/'lighting_alignment.json',stats)
     plan['lighting']=dict(reviewed=False,guide_path=str(Path(image).resolve()),guide_hash=digest(image),
         aligned_hash=digest(job/'lighting_aligned.png'),flat_hash=context['flat_hash'],
-        notes='',strength=1.0,temperature='neutral')
+        notes='',strength=1.0,temperature='neutral',
+        # Old jobs without the key keep gray lighting; see material_lighting.
+        color_model='source_tones' if any('tones' in v for v in palette['palettes'].values()) else 'neutral')
     write_json(job/'semantic_plan.json',plan)
     event(job,'coloring_lighting_review','照明ガイドを入力線画に位置合わせ。元の線・パーツは固定',next_action='alignment_comparisonを目視しlighting.reviewedとnotesを記入')
     return dict(job=str(job),alignment=stats,next_action='Review alignment; set lighting.reviewed=true and notes before build-colored')
+
+
+def material_lighting(base,tones,neutral):
+    """Multiply/Screen colors whose full opacity reaches the source tone ramp.
+
+    Gray lighting caps whites below the original and bleaches colored lights;
+    per-material colors keep Base untouched while restoring both endpoints.
+    """
+    if not tones or not {'shadow','peak'}<=set(tones.get('bands',{})):
+        return neutral[0],neutral[1],'neutral'
+    dark=np.asarray(tones['bands']['shadow']['rgb'],np.float32)/255
+    peak=np.asarray(tones['bands']['peak']['rgb'],np.float32)/255
+    shadow=np.clip(dark/np.maximum(base,1/255),0,1)
+    light=np.clip((peak-base)/np.maximum(1-base,1/255),0,1)
+    return shadow.astype(np.float32),light.astype(np.float32),'source_tones'
+
+
+def levels_luma(values,sample,tones):
+    """Match the guide's exposure to the source, keeping the guide's contrast.
+
+    Median -> source midtone and 87.5th percentile -> source bright, with the
+    gain limited to 0.5..2 so guide noise is not stretched into texture.
+    """
+    weights=np.array([.2126,.7152,.0722])
+    mid,bright=[float(np.asarray(tones['bands'][k]['rgb'])/255@weights) for k in ('midtone','bright')]
+    low,high=np.percentile(sample,[50,87.5])
+    gain=float(np.clip((bright-mid)/max(high-low,1e-3),.5,2))
+    return np.clip(mid+(values-low)*gain,0,1)
+
+
+def lightness(rgb):
+    from skimage.color import rgb2lab
+    return float(rgb2lab(np.clip(np.asarray(rgb,np.float64),0,1).reshape(1,1,3))[0,0,0])
 
 
 def build_colored(job,output=None):
@@ -392,27 +430,58 @@ def build_colored(job,output=None):
     temperature=lighting.get('temperature','neutral') if lighting else 'neutral'
     if not isinstance(strength,(int,float)) or not np.isfinite(strength) or not 0<=strength<=2:raise ValueError('Lighting strength must be 0..2')
     if temperature not in LIGHTING:raise ValueError('Unknown lighting temperature')
-    shadow,highlight=[np.asarray(c,np.float32) for c in LIGHTING[temperature]]
-    weights=np.array([.2126,.7152,.0722])
+    neutral=[np.asarray(c,np.float32) for c in LIGHTING[temperature]]
+    color_model=lighting.get('color_model','neutral') if lighting else 'neutral'
+    if color_model not in ('neutral','source_tones'):raise ValueError('Unknown lighting color_model')
+    tone_mapping=lighting.get('tone_mapping','absolute') if lighting else 'absolute'
+    if tone_mapping not in ('absolute','source_levels'):raise ValueError('Unknown lighting tone_mapping')
+    weights=np.array([.2126,.7152,.0722]);reach={};mapped=[]
+    if guide is not None:
+        luminance=guide@weights
+        # Line darkness is excluded before any guide statistics are taken.
+        clean=~ndi.binary_dilation(arrays['ink'],iterations=2)
+        samples={}
+        for i,part in enumerate(plan['parts'],1):
+            if part['semantic_id']!='background':
+                samples.setdefault(part['palette_id'],[]).append(luminance[(labels==i)&clean])
+        samples={k:np.concatenate(v) for k,v in samples.items()}
     for i,part in enumerate(plan['parts'],1):
         mask=labels==i;title=part.get('display_name',part['semantic_id']);base=lut[i]
         path=part.get('group_path',['着色'])+[f'{title} [{part["semantic_id"]}]']
         if part['semantic_id']=='background':
             add(title+'_Base','Background',base,mask.astype(np.float32),['背景']);continue
         add(title+'_Base','Base',base,mask.astype(np.float32),path)
+        tones=palette['palettes'][part['palette_id']].get('tones')
+        if color_model=='source_tones':
+            shadow,highlight,used=material_lighting(base,tones,neutral)
+        else:
+            shadow,highlight,used=neutral[0],neutral[1],'neutral'
+        if tones and 'bright' in tones.get('bands',{}):
+            # Can a fully opaque Highlight reach the source's normal lit tone?
+            top=lightness(base+(1-base)*highlight) if guide is not None else lightness(base)
+            goal=tones['bands']['bright']['L']
+            reach[part['palette_id']]=dict(model=used,base_L=round(lightness(base),2),max_L=round(top,2),
+                source_bright_L=goal,reachable=bool(top>=goal-1))
         if guide is not None:
             # Remove line darkness before inferring lighting. RGB hues of the AI
             # guide are never copied: only luminance modulates neutral lighting.
             interior=mask & ~ndi.binary_dilation(arrays['ink'],iterations=2)
             if not interior.any():interior=mask
             nearest=ndi.distance_transform_edt(~interior,return_distances=False,return_indices=True)
-            luminance=guide@weights
             target_luma=luminance[tuple(nearest)]
+            sample=samples.get(part['palette_id'])
+            if (tone_mapping=='source_levels' and tones and sample is not None and len(sample)>=32
+                    and {'midtone','bright'}<=set(tones.get('bands',{}))):
+                target_luma=np.where(mask,levels_luma(target_luma,sample,tones),target_luma)
+                mapped.append(part['palette_id'])
             base_luma=float(base@weights)
-            dark_capacity=max(float((base*(1-shadow))@weights),1e-6)
-            light_capacity=max(float(((1-base)*highlight)@weights),1e-6)
-            sa=np.clip((base_luma-target_luma)/dark_capacity*strength,0,1)*mask
-            ha=np.clip((target_luma-base_luma)/light_capacity*strength,0,1)*mask
+            dark_capacity=float((base*(1-shadow))@weights)
+            light_capacity=float(((1-base)*highlight)@weights)
+            # Below one 8-bit level the layer would be an invisible empty layer.
+            sa=(np.clip((base_luma-target_luma)/max(dark_capacity,1e-6)*strength,0,1)*mask
+                if dark_capacity>=1/255 else np.zeros(mask.shape,np.float32))
+            ha=(np.clip((target_luma-base_luma)/max(light_capacity,1e-6)*strength,0,1)*mask
+                if light_capacity>=1/255 else np.zeros(mask.shape,np.float32))
             add(title+'_Shadow','Shadows',shadow,sa,path,'multiply')
             add(title+'_Highlight','Highlights',highlight,ha,path,'screen')
             expected=expected*(1-sa[...,None]+shadow*sa[...,None])
@@ -435,7 +504,9 @@ def build_colored(job,output=None):
     analysis=dict(passed=passed,psd_hash=manifest['psd_hash'],pipeline='coloring',
         metrics=dict(mae=float(difference.mean()),max_channel_error=float(difference.max())),
         evaluation_reference='Python coloring target, not the source character pose or AI pixels',
-        palette_preserved=True,input_ink_preserved=True,pixel_layers=len(layers),folders=count_groups(layers))
+        palette_preserved=True,input_ink_preserved=True,pixel_layers=len(layers),folders=count_groups(layers),
+        lighting_color_model=color_model,tone_mapping=tone_mapping,tone_mapped_palettes=sorted(set(mapped)),tone_reach=reach,
+        tone_reach_warnings=sorted(k for k,v in reach.items() if not v['reachable']))
     write_json(job/'analysis.json',analysis)
     for name in ('analysis.json','source_palette.json','lineart_binary.png','lineart_rgba.png'):
         if output.parent!=job:atomic_write(output.parent/name,(job/name).read_bytes())

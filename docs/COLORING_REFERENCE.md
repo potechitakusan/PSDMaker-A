@@ -9,7 +9,7 @@
 | semantic_plan_hash | 書き出し元の意味計画のSHA-256。元計画の添付は不要 |
 | size / bbox_convention | PSDの幅・高さ、元画像のbbox座標規約（右端・下端は含まない） |
 | classification_source | 元計画の分類状態。事後レビューの合格証ではない |
-| palettes | palette_idごとの実Base RGB（0〜255整数）とsource_parts |
+| palettes | palette_idごとの実Base RGB（0〜255整数）とsource_parts。任意で`tones`（元絵の線なし下塗りから測ったshadow/midtone/light/bright/peak帯のRGB・L*・C*） |
 | parts | semantic_id、display_name、palette_id、group_path、coloring_notes、base_layer_path、source_bbox |
 
 意味名と階層はAgentの確認した計画から引き継ぐ。RGBとBaseレイヤー階層・bboxはPythonが実PSDから取得する。coloring_notesは任意の素材説明・注意点で、未指定は空文字。背景の色、旧領域番号、マスク、照明ガイド、ローカル絶対パスは転送しない。
@@ -19,7 +19,9 @@
 .\.venv\Scripts\python.exe -m anime_layer_agent prepare-coloring --lineart input/new_pose.jpg --source-reference output/source/coloring_reference.json --job work/new_pose
 ```
 
-読み込み時にPSDハッシュ・サイズ・実Base RGB・パーツとパレットの対応を検証する。着色の途中でPSDやJSONが変わった場合は再準備を求める。RGBだけを書き換えてPSDと矛盾させることはできない。JSONは署名済みデータではなく、自由記述の意味・素材が正しいかはAgentが画像と照合する。
+tonesはBaseマスクと元絵の数値統計で、画像・マスクは含まない。Baseは面積最大の色で陰寄りになり得るため、第2機能はtonesから素材別の影色・光色を決める。tonesのない旧JSONも読み込める（灰色照明になる）。
+
+読み込み時にPSDハッシュ・サイズ・実Base RGB・パーツとパレットの対応、tonesのRGB範囲を検証する。着色の途中でPSDやJSONが変わった場合は再準備を求める。RGBだけを書き換えてPSDと矛盾させることはできない。JSONは署名済みデータではなく、自由記述の意味・素材が正しいかはAgentが画像と照合する。
 
 Base名が重複して一意に特定できないPSD、単色でないBase、同じpalette_idの異なるBase色は書き出しを拒否する。新規制作ではdisplay_nameを一意にする。参照PSDだけを外部アプリで編集した場合、既存jobのハッシュは一致しなくなるため、そのまま再書き出しはできない。
 

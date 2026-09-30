@@ -2,8 +2,8 @@
   "schema": 1,
   "kind": "coloring_reference",
   "psd_file": "output.psd",
-  "psd_hash": "0036c01351961d45a49b44d1dd1bb47e4198d35979644fbcae4459016002c18c",
-  "semantic_plan_hash": "9583ed8d99ee8a8f1e48f33a653845d04fc7157d2d1c2877e3bccb95acb83a81",
+  "psd_hash": "d3511b241d29e99c9bdaa7aa8714baabcb9516bc89c0b21ccde6ad9068810355",
+  "semantic_plan_hash": "3ff12b15a48d0b64a3e1f3937263f12dbff0dd52609dbdf9ffb9e9da058c1791",
   "size": [
     840,
     1232
@@ -11,35 +11,136 @@
   "bbox_convention": "source pixels; left, top, right, bottom; exclusive end",
   "classification_source": "astra_reviewed",
   "palettes": {
-    "white_fabric": {
+    "hair_pink": {
       "rgb": [
-        192,
-        183,
-        201
-      ],
-      "source_parts": [
-        "headdress",
-        "headband",
-        "collar_white",
-        "shoulder_frills",
-        "apron_chest",
-        "apron_waist",
-        "apron_skirt",
-        "apron_bow",
-        "cuff_front",
-        "cuff_right"
-      ]
-    },
-    "pink_hair": {
-      "rgb": [
-        214,
-        148,
-        168
+        226,
+        178,
+        192
       ],
       "source_parts": [
         "hair_front",
-        "hair_back"
-      ]
+        "hair_long"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 64727,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              202.5489959716797,
+              132.34100341796875,
+              156.72999572753906
+            ],
+            "L": 63.056,
+            "C": 30.444
+          },
+          "midtone": {
+            "rgb": [
+              239.8070068359375,
+              201.2270050048828,
+              209.26499938964844
+            ],
+            "L": 84.478,
+            "C": 14.924
+          },
+          "light": {
+            "rgb": [
+              245.46600341796875,
+              217.59500122070312,
+              222.3040008544922
+            ],
+            "L": 89.264,
+            "C": 10.468
+          },
+          "bright": {
+            "rgb": [
+              247.49099731445312,
+              228.61900329589844,
+              230.54800415039062
+            ],
+            "L": 92.328,
+            "C": 6.931
+          },
+          "peak": {
+            "rgb": [
+              250.83299255371094,
+              243.00100708007812,
+              241.3769989013672
+            ],
+            "L": 96.392,
+            "C": 3.177
+          }
+        }
+      }
+    },
+    "white_fabric": {
+      "rgb": [
+        195,
+        186,
+        204
+      ],
+      "source_parts": [
+        "headband",
+        "collar",
+        "shoulder_frills",
+        "apron_chest",
+        "apron_waist",
+        "cuff_left",
+        "cuff_right"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 93657,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              169.58399963378906,
+              160.27699279785156,
+              183.06199645996094
+            ],
+            "L": 67.39,
+            "C": 13.107
+          },
+          "midtone": {
+            "rgb": [
+              189.78700256347656,
+              181.0449981689453,
+              199.6909942626953
+            ],
+            "L": 74.915,
+            "C": 10.633
+          },
+          "light": {
+            "rgb": [
+              230.4600067138672,
+              225.86900329589844,
+              230.0500030517578
+            ],
+            "L": 90.227,
+            "C": 3.705
+          },
+          "bright": {
+            "rgb": [
+              248.7449951171875,
+              248.76100158691406,
+              246.55099487304688
+            ],
+            "L": 97.787,
+            "C": 1.151
+          },
+          "peak": {
+            "rgb": [
+              249.9199981689453,
+              250.17799377441406,
+              247.28799438476562
+            ],
+            "L": 98.243,
+            "C": 1.513
+          }
+        }
+      }
     },
     "flower_pink": {
       "rgb": [
@@ -49,13 +150,65 @@
       ],
       "source_parts": [
         "flower_petals"
-      ]
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 623,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              242.45599365234375,
+              135.6580047607422,
+              162.59500122070312
+            ],
+            "L": 68.83,
+            "C": 43.77
+          },
+          "midtone": {
+            "rgb": [
+              248.75399780273438,
+              173.0749969482422,
+              194.53700256347656
+            ],
+            "L": 78.424,
+            "C": 30.658
+          },
+          "light": {
+            "rgb": [
+              250.01600646972656,
+              179.42599487304688,
+              199.48800659179688
+            ],
+            "L": 80.118,
+            "C": 28.477
+          },
+          "bright": {
+            "rgb": [
+              250.05599975585938,
+              188.15899658203125,
+              204.6820068359375
+            ],
+            "L": 82.254,
+            "C": 24.667
+          },
+          "peak": {
+            "rgb": [
+              250.44700622558594,
+              192.44700622558594,
+              207.44700622558594
+            ],
+            "L": 83.354,
+            "C": 22.965
+          }
+        }
+      }
     },
-    "flower_center": {
+    "flower_yellow": {
       "rgb": [
         244,
         189,
-        87
+        88
       ],
       "source_parts": [
         "flower_center"
@@ -63,184 +216,564 @@
     },
     "skin": {
       "rgb": [
-        236,
-        195,
-        187
+        242,
+        208,
+        198
       ],
       "source_parts": [
-        "face",
-        "hand_front",
-        "hand_right"
+        "skin_face",
+        "hands"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 49273,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              218.47500610351562,
+              162.53700256347656,
+              158.2989959716797
+            ],
+            "L": 71.888,
+            "C": 22.595
+          },
+          "midtone": {
+            "rgb": [
+              248.24000549316406,
+              210.14599609375,
+              199.8719940185547
+            ],
+            "L": 87.167,
+            "C": 15.538
+          },
+          "light": {
+            "rgb": [
+              249.25900268554688,
+              220.343994140625,
+              209.08900451660156
+            ],
+            "L": 89.936,
+            "C": 12.319
+          },
+          "bright": {
+            "rgb": [
+              250.56100463867188,
+              226.16600036621094,
+              214.47300720214844
+            ],
+            "L": 91.593,
+            "C": 10.965
+          },
+          "peak": {
+            "rgb": [
+              251.9290008544922,
+              234.697998046875,
+              222.52200317382812
+            ],
+            "L": 93.982,
+            "C": 8.903
+          }
+        }
+      }
+    },
+    "facial_dark": {
+      "rgb": [
+        65,
+        38,
+        42
+      ],
+      "source_parts": [
+        "facial_ink"
       ]
     },
     "iris_purple": {
       "rgb": [
-        79,
-        43,
-        112
+        80,
+        42,
+        115
       ],
       "source_parts": [
-        "eyes"
-      ]
+        "iris_left",
+        "iris_right"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 568,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              83.22699737548828,
+              44.09299850463867,
+              120.01300048828125
+            ],
+            "L": 26.776,
+            "C": 49.77
+          },
+          "midtone": {
+            "rgb": [
+              172.8159942626953,
+              111.74600219726562,
+              206.24600219726562
+            ],
+            "L": 56.924,
+            "C": 56.998
+          },
+          "light": {
+            "rgb": [
+              205.74600219726562,
+              142.98199462890625,
+              228.3679962158203
+            ],
+            "L": 68.275,
+            "C": 51.264
+          },
+          "bright": {
+            "rgb": [
+              221.28700256347656,
+              160.4600067138672,
+              236.39100646972656
+            ],
+            "L": 74.061,
+            "C": 45.9
+          },
+          "peak": {
+            "rgb": [
+              229.552001953125,
+              169.65499877929688,
+              240.0
+            ],
+            "L": 77.079,
+            "C": 42.889
+          }
+        }
+      }
     },
-    "black_kimono": {
+    "eye_white": {
       "rgb": [
-        69,
-        62,
-        71
+        237,
+        221,
+        221
       ],
       "source_parts": [
-        "collar_black",
-        "kimono_front",
-        "kimono_right"
-      ]
+        "eye_white"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 813,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              214.38099670410156,
+              195.57699584960938,
+              198.3090057373047
+            ],
+            "L": 80.591,
+            "C": 7.171
+          },
+          "midtone": {
+            "rgb": [
+              237.4969940185547,
+              225.58799743652344,
+              222.6439971923828
+            ],
+            "L": 90.583,
+            "C": 4.597
+          },
+          "light": {
+            "rgb": [
+              238.1820068359375,
+              226.6280059814453,
+              223.7169952392578
+            ],
+            "L": 90.922,
+            "C": 4.464
+          },
+          "bright": {
+            "rgb": [
+              238.57000732421875,
+              227.33799743652344,
+              224.45700073242188
+            ],
+            "L": 91.147,
+            "C": 4.357
+          },
+          "peak": {
+            "rgb": [
+              239.68299865722656,
+              228.56100463867188,
+              225.072998046875
+            ],
+            "L": 91.553,
+            "C": 4.438
+          }
+        }
+      }
     },
-    "toy_cream": {
+    "black_fabric": {
       "rgb": [
-        229,
-        211,
-        196
+        22,
+        21,
+        28
       ],
       "source_parts": [
-        "toy_ears",
-        "toy_head",
-        "toy_body",
-        "toy_limbs"
-      ]
+        "dress_body",
+        "dress_sleeve_left",
+        "dress_sleeve_right"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 150658,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              12.267000198364258,
+              11.765000343322754,
+              15.26099967956543
+            ],
+            "L": 3.487,
+            "C": 1.96
+          },
+          "midtone": {
+            "rgb": [
+              35.69300079345703,
+              33.09700012207031,
+              40.85499954223633
+            ],
+            "L": 13.293,
+            "C": 5.795
+          },
+          "light": {
+            "rgb": [
+              67.76100158691406,
+              60.47800064086914,
+              69.4800033569336
+            ],
+            "L": 26.557,
+            "C": 6.723
+          },
+          "bright": {
+            "rgb": [
+              70.62300109863281,
+              62.53499984741211,
+              71.98300170898438
+            ],
+            "L": 27.565,
+            "C": 7.114
+          },
+          "peak": {
+            "rgb": [
+              74.21900177001953,
+              64.8479995727539,
+              74.28199768066406
+            ],
+            "L": 28.711,
+            "C": 7.361
+          }
+        }
+      }
     },
-    "toy_ear_pink": {
+    "rabbit_cream": {
+      "rgb": [
+        251,
+        247,
+        228
+      ],
+      "source_parts": [
+        "rabbit_ears",
+        "rabbit_head",
+        "rabbit_body"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 34286,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              204.11000061035156,
+              172.07200622558594,
+              162.52000427246094
+            ],
+            "L": 72.901,
+            "C": 13.723
+          },
+          "midtone": {
+            "rgb": [
+              247.22900390625,
+              241.3820037841797,
+              222.9199981689453
+            ],
+            "L": 95.266,
+            "C": 9.891
+          },
+          "light": {
+            "rgb": [
+              251.3280029296875,
+              247.61599731445312,
+              228.4739990234375
+            ],
+            "L": 97.267,
+            "C": 9.846
+          },
+          "bright": {
+            "rgb": [
+              251.43899536132812,
+              248.0,
+              228.9759979248047
+            ],
+            "L": 97.382,
+            "C": 9.768
+          },
+          "peak": {
+            "rgb": [
+              252.21099853515625,
+              248.4709930419922,
+              228.88499450683594
+            ],
+            "L": 97.556,
+            "C": 10.072
+          }
+        }
+      }
+    },
+    "rabbit_inner_pink": {
       "rgb": [
         195,
         116,
         138
       ],
       "source_parts": [
-        "toy_ear_inner"
-      ]
+        "rabbit_inner_ears"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 1835,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              194.26600646972656,
+              112.81099700927734,
+              135.60899353027344
+            ],
+            "L": 57.118,
+            "C": 34.942
+          },
+          "midtone": {
+            "rgb": [
+              199.98500061035156,
+              121.05899810791016,
+              143.31900024414062
+            ],
+            "L": 59.855,
+            "C": 33.627
+          },
+          "light": {
+            "rgb": [
+              200.71800231933594,
+              122.0,
+              143.99000549316406
+            ],
+            "L": 60.171,
+            "C": 33.482
+          },
+          "bright": {
+            "rgb": [
+              201.2550048828125,
+              122.4469985961914,
+              144.46499633789062
+            ],
+            "L": 60.349,
+            "C": 33.503
+          },
+          "peak": {
+            "rgb": [
+              202.13400268554688,
+              123.21499633789062,
+              145.20399475097656
+            ],
+            "L": 60.647,
+            "C": 33.512
+          }
+        }
+      }
     },
-    "toy_brown": {
+    "rabbit_dark": {
       "rgb": [
-        65,
-        21,
-        19
+        254,
+        249,
+        243
       ],
       "source_parts": [
-        "toy_eyes"
+        "rabbit_eyes"
       ]
     },
-    "toy_ribbon": {
-      "rgb": [
-        171,
-        57,
-        101
-      ],
-      "source_parts": [
-        "toy_head_bow",
-        "toy_neck_bow"
-      ]
-    },
-    "sclera": {
-      "rgb": [
-        238,
-        227,
-        223
-      ],
-      "source_parts": [
-        "sclera"
-      ]
-    },
-    "toy_cheek": {
+    "rabbit_cheek_pink": {
       "rgb": [
         251,
         202,
-        199
+        198
       ],
       "source_parts": [
-        "toy_cheeks"
-      ]
+        "rabbit_cheeks"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 893,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              228.8090057373047,
+              169.4499969482422,
+              174.24400329589844
+            ],
+            "L": 74.952,
+            "C": 23.41
+          },
+          "midtone": {
+            "rgb": [
+              251.28399658203125,
+              201.69000244140625,
+              198.01699829101562
+            ],
+            "L": 85.372,
+            "C": 19.015
+          },
+          "light": {
+            "rgb": [
+              251.0,
+              202.0,
+              198.0
+            ],
+            "L": 85.418,
+            "C": 18.807
+          },
+          "bright": {
+            "rgb": [
+              251.3470001220703,
+              202.28599548339844,
+              198.3560028076172
+            ],
+            "L": 85.527,
+            "C": 18.819
+          },
+          "peak": {
+            "rgb": [
+              252.09300231933594,
+              203.12899780273438,
+              199.17100524902344
+            ],
+            "L": 85.816,
+            "C": 18.766
+          }
+        }
+      }
+    },
+    "ribbon_magenta": {
+      "rgb": [
+        156,
+        44,
+        88
+      ],
+      "source_parts": [
+        "rabbit_ribbons"
+      ],
+      "tones": {
+        "source": "original_underlying",
+        "status": "measured",
+        "pixels": 1591,
+        "bands": {
+          "shadow": {
+            "rgb": [
+              155.39100646972656,
+              41.82699966430664,
+              87.43099975585938
+            ],
+            "L": 36.654,
+            "C": 50.02
+          },
+          "midtone": {
+            "rgb": [
+              188.0489959716797,
+              70.28399658203125,
+              115.6719970703125
+            ],
+            "L": 47.458,
+            "C": 51.454
+          },
+          "light": {
+            "rgb": [
+              203.26300048828125,
+              77.08499908447266,
+              124.0
+            ],
+            "L": 51.266,
+            "C": 54.163
+          },
+          "bright": {
+            "rgb": [
+              234.48599243164062,
+              91.83499908447266,
+              140.59800720214844
+            ],
+            "L": 59.096,
+            "C": 59.286
+          },
+          "peak": {
+            "rgb": [
+              240.33799743652344,
+              100.51899719238281,
+              149.01300048828125
+            ],
+            "L": 61.632,
+            "C": 58.199
+          }
+        }
+      }
     }
   },
   "parts": [
     {
-      "semantic_id": "headdress",
-      "display_name": "ヘッドドレス",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "髪・頭飾り"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "髪・頭飾り",
-        "ヘッドドレス [headdress]",
-        "ヘッドドレス_Base"
-      ],
-      "source_bbox": [
-        248,
-        0,
-        651,
-        215
-      ]
-    },
-    {
-      "semantic_id": "headband",
-      "display_name": "カチューシャ",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "髪・頭飾り"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "髪・頭飾り",
-        "カチューシャ [headband]",
-        "カチューシャ_Base"
-      ],
-      "source_bbox": [
-        282,
-        42,
-        597,
-        184
-      ]
-    },
-    {
       "semantic_id": "hair_front",
-      "display_name": "前髪・横髪",
-      "palette_id": "pink_hair",
+      "display_name": "前髪",
+      "palette_id": "hair_pink",
       "group_path": [
         "キャラクター",
-        "髪・頭飾り"
+        "髪"
       ],
-      "coloring_notes": "",
+      "coloring_notes": "淡いピンクの髪。白い反射と暗い束も同素材。肌や白目とは分離。",
       "base_layer_path": [
         "キャラクター",
-        "髪・頭飾り",
-        "前髪・横髪 [hair_front]",
-        "前髪・横髪_Base"
+        "髪",
+        "前髪 [hair_front]",
+        "前髪_Base"
       ],
       "source_bbox": [
-        182,
+        277,
         59,
-        671,
-        557
+        672,
+        509
       ]
     },
     {
-      "semantic_id": "hair_back",
-      "display_name": "後ろ髪・長い毛束",
-      "palette_id": "pink_hair",
+      "semantic_id": "hair_long",
+      "display_name": "長い髪と後髪",
+      "palette_id": "hair_pink",
       "group_path": [
         "キャラクター",
-        "髪・頭飾り"
+        "髪"
       ],
       "coloring_notes": "",
       "base_layer_path": [
         "キャラクター",
-        "髪・頭飾り",
-        "後ろ髪・長い毛束 [hair_back]",
-        "後ろ髪・長い毛束_Base"
+        "髪",
+        "長い髪と後髪 [hair_long]",
+        "長い髪と後髪_Base"
       ],
       "source_bbox": [
         0,
@@ -250,19 +783,45 @@
       ]
     },
     {
-      "semantic_id": "flower_petals",
-      "display_name": "髪飾り・花びら",
-      "palette_id": "flower_pink",
+      "semantic_id": "headband",
+      "display_name": "ヘッドドレス",
+      "palette_id": "white_fabric",
       "group_path": [
         "キャラクター",
-        "髪・頭飾り"
+        "衣装",
+        "頭飾り"
       ],
       "coloring_notes": "",
       "base_layer_path": [
         "キャラクター",
-        "髪・頭飾り",
-        "髪飾り・花びら [flower_petals]",
-        "髪飾り・花びら_Base"
+        "衣装",
+        "頭飾り",
+        "ヘッドドレス [headband]",
+        "ヘッドドレス_Base"
+      ],
+      "source_bbox": [
+        248,
+        0,
+        652,
+        216
+      ]
+    },
+    {
+      "semantic_id": "flower_petals",
+      "display_name": "花びら",
+      "palette_id": "flower_pink",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "頭飾り"
+      ],
+      "coloring_notes": "髪より鮮やかなピンクの花飾り。髪とは別素材。",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "頭飾り",
+        "花びら [flower_petals]",
+        "花びら_Base"
       ],
       "source_bbox": [
         198,
@@ -273,30 +832,54 @@
     },
     {
       "semantic_id": "flower_center",
-      "display_name": "髪飾り・花芯",
-      "palette_id": "flower_center",
+      "display_name": "花の中心",
+      "palette_id": "flower_yellow",
       "group_path": [
         "キャラクター",
-        "髪・頭飾り"
+        "衣装",
+        "頭飾り"
       ],
       "coloring_notes": "",
       "base_layer_path": [
         "キャラクター",
-        "髪・頭飾り",
-        "髪飾り・花芯 [flower_center]",
-        "髪飾り・花芯_Base"
+        "衣装",
+        "頭飾り",
+        "花の中心 [flower_center]",
+        "花の中心_Base"
       ],
       "source_bbox": [
         239,
         212,
-        264,
+        265,
         237
       ]
     },
     {
-      "semantic_id": "face",
+      "semantic_id": "skin_face",
       "display_name": "顔・耳・首",
       "palette_id": "skin",
+      "group_path": [
+        "キャラクター",
+        "肌"
+      ],
+      "coloring_notes": "頬の赤みと肌の照明を含む。白目は別素材。",
+      "base_layer_path": [
+        "キャラクター",
+        "肌",
+        "顔・耳・首 [skin_face]",
+        "顔・耳・首_Base"
+      ],
+      "source_bbox": [
+        230,
+        190,
+        580,
+        591
+      ]
+    },
+    {
+      "semantic_id": "facial_ink",
+      "display_name": "まつ毛・眉の濃色",
+      "palette_id": "facial_dark",
       "group_path": [
         "キャラクター",
         "顔"
@@ -305,19 +888,19 @@
       "base_layer_path": [
         "キャラクター",
         "顔",
-        "顔・耳・首 [face]",
-        "顔・耳・首_Base"
+        "まつ毛・眉の濃色 [facial_ink]",
+        "まつ毛・眉の濃色_Base"
       ],
       "source_bbox": [
-        231,
-        190,
-        579,
-        580
+        357,
+        290,
+        564,
+        500
       ]
     },
     {
-      "semantic_id": "eyes",
-      "display_name": "左右の瞳",
+      "semantic_id": "iris_left",
+      "display_name": "虹彩・画面左",
       "palette_id": "iris_purple",
       "group_path": [
         "キャラクター",
@@ -327,466 +910,20 @@
       "base_layer_path": [
         "キャラクター",
         "顔",
-        "左右の瞳 [eyes]",
-        "左右の瞳_Base"
+        "虹彩・画面左 [iris_left]",
+        "虹彩・画面左_Base"
       ],
       "source_bbox": [
         346,
-        290,
-        565,
-        394
+        295,
+        395,
+        349
       ]
     },
     {
-      "semantic_id": "collar_white",
-      "display_name": "襟の白い縁",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "襟の白い縁 [collar_white]",
-        "襟の白い縁_Base"
-      ],
-      "source_bbox": [
-        266,
-        496,
-        514,
-        690
-      ]
-    },
-    {
-      "semantic_id": "collar_black",
-      "display_name": "黒い襟",
-      "palette_id": "black_kimono",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "黒い襟 [collar_black]",
-        "黒い襟_Base"
-      ],
-      "source_bbox": [
-        204,
-        512,
-        520,
-        697
-      ]
-    },
-    {
-      "semantic_id": "kimono_front",
-      "display_name": "着物・胴と手前袖",
-      "palette_id": "black_kimono",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "着物・胴と手前袖 [kimono_front]",
-        "着物・胴と手前袖_Base"
-      ],
-      "source_bbox": [
-        106,
-        603,
-        527,
-        1232
-      ]
-    },
-    {
-      "semantic_id": "kimono_right",
-      "display_name": "着物・奥の袖",
-      "palette_id": "black_kimono",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "着物・奥の袖 [kimono_right]",
-        "着物・奥の袖_Base"
-      ],
-      "source_bbox": [
-        339,
-        843,
-        840,
-        1232
-      ]
-    },
-    {
-      "semantic_id": "shoulder_frills",
-      "display_name": "肩のフリル・肩紐",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "肩のフリル・肩紐 [shoulder_frills]",
-        "肩のフリル・肩紐_Base"
-      ],
-      "source_bbox": [
-        66,
-        528,
-        550,
-        949
-      ]
-    },
-    {
-      "semantic_id": "apron_chest",
-      "display_name": "エプロン胸当て",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "エプロン胸当て [apron_chest]",
-        "エプロン胸当て_Base"
-      ],
-      "source_bbox": [
-        394,
-        682,
-        530,
-        929
-      ]
-    },
-    {
-      "semantic_id": "apron_waist",
-      "display_name": "エプロン腰帯",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "エプロン腰帯 [apron_waist]",
-        "エプロン腰帯_Base"
-      ],
-      "source_bbox": [
-        531,
-        900,
-        658,
-        1089
-      ]
-    },
-    {
-      "semantic_id": "apron_skirt",
-      "display_name": "エプロン裾",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "エプロン裾 [apron_skirt]",
-        "エプロン裾_Base"
-      ],
-      "source_bbox": [
-        521,
-        1046,
-        794,
-        1232
-      ]
-    },
-    {
-      "semantic_id": "apron_bow",
-      "display_name": "背中の白いリボン",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "背中の白いリボン [apron_bow]",
-        "背中の白いリボン_Base"
-      ],
-      "source_bbox": [
-        9,
-        970,
-        757,
-        1232
-      ]
-    },
-    {
-      "semantic_id": "cuff_front",
-      "display_name": "手前の袖口フリル",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "手前の袖口フリル [cuff_front]",
-        "手前の袖口フリル_Base"
-      ],
-      "source_bbox": [
-        454,
-        869,
-        761,
-        1101
-      ]
-    },
-    {
-      "semantic_id": "cuff_right",
-      "display_name": "奥の袖口フリル",
-      "palette_id": "white_fabric",
-      "group_path": [
-        "キャラクター",
-        "衣装"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "衣装",
-        "奥の袖口フリル [cuff_right]",
-        "奥の袖口フリル_Base"
-      ],
-      "source_bbox": [
-        509,
-        919,
-        768,
-        1129
-      ]
-    },
-    {
-      "semantic_id": "hand_front",
-      "display_name": "手前の手・腕",
-      "palette_id": "skin",
-      "group_path": [
-        "キャラクター",
-        "手"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "手",
-        "手前の手・腕 [hand_front]",
-        "手前の手・腕_Base"
-      ],
-      "source_bbox": [
-        477,
-        695,
-        718,
-        958
-      ]
-    },
-    {
-      "semantic_id": "hand_right",
-      "display_name": "奥の手・腕",
-      "palette_id": "skin",
-      "group_path": [
-        "キャラクター",
-        "手"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "キャラクター",
-        "手",
-        "奥の手・腕 [hand_right]",
-        "奥の手・腕_Base"
-      ],
-      "source_bbox": [
-        633,
-        737,
-        736,
-        1028
-      ]
-    },
-    {
-      "semantic_id": "toy_ears",
-      "display_name": "うさぎ・耳の外側",
-      "palette_id": "toy_cream",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・耳の外側 [toy_ears]",
-        "うさぎ・耳の外側_Base"
-      ],
-      "source_bbox": [
-        604,
-        408,
-        840,
-        578
-      ]
-    },
-    {
-      "semantic_id": "toy_ear_inner",
-      "display_name": "うさぎ・耳の内側",
-      "palette_id": "toy_ear_pink",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・耳の内側 [toy_ear_inner]",
-        "うさぎ・耳の内側_Base"
-      ],
-      "source_bbox": [
-        642,
-        449,
-        840,
-        594
-      ]
-    },
-    {
-      "semantic_id": "toy_head",
-      "display_name": "うさぎ・顔",
-      "palette_id": "toy_cream",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・顔 [toy_head]",
-        "うさぎ・顔_Base"
-      ],
-      "source_bbox": [
-        505,
-        537,
-        736,
-        728
-      ]
-    },
-    {
-      "semantic_id": "toy_eyes",
-      "display_name": "うさぎ・目と鼻",
-      "palette_id": "toy_brown",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・目と鼻 [toy_eyes]",
-        "うさぎ・目と鼻_Base"
-      ],
-      "source_bbox": [
-        639,
-        605,
-        724,
-        669
-      ]
-    },
-    {
-      "semantic_id": "toy_head_bow",
-      "display_name": "うさぎ・耳のリボン",
-      "palette_id": "toy_ribbon",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・耳のリボン [toy_head_bow]",
-        "うさぎ・耳のリボン_Base"
-      ],
-      "source_bbox": [
-        657,
-        521,
-        744,
-        613
-      ]
-    },
-    {
-      "semantic_id": "toy_neck_bow",
-      "display_name": "うさぎ・胸のリボン",
-      "palette_id": "toy_ribbon",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・胸のリボン [toy_neck_bow]",
-        "うさぎ・胸のリボン_Base"
-      ],
-      "source_bbox": [
-        600,
-        690,
-        690,
-        776
-      ]
-    },
-    {
-      "semantic_id": "toy_body",
-      "display_name": "うさぎ・胴",
-      "palette_id": "toy_cream",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・胴 [toy_body]",
-        "うさぎ・胴_Base"
-      ],
-      "source_bbox": [
-        520,
-        691,
-        696,
-        878
-      ]
-    },
-    {
-      "semantic_id": "toy_limbs",
-      "display_name": "うさぎ・手足",
-      "palette_id": "toy_cream",
-      "group_path": [
-        "ぬいぐるみ"
-      ],
-      "coloring_notes": "",
-      "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・手足 [toy_limbs]",
-        "うさぎ・手足_Base"
-      ],
-      "source_bbox": [
-        554,
-        716,
-        759,
-        949
-      ]
-    },
-    {
-      "semantic_id": "sclera",
-      "display_name": "左右の白目",
-      "palette_id": "sclera",
+      "semantic_id": "iris_right",
+      "display_name": "虹彩・画面右",
+      "palette_id": "iris_purple",
       "group_path": [
         "キャラクター",
         "顔"
@@ -795,34 +932,428 @@
       "base_layer_path": [
         "キャラクター",
         "顔",
-        "左右の白目 [sclera]",
-        "左右の白目_Base"
+        "虹彩・画面右 [iris_right]",
+        "虹彩・画面右_Base"
       ],
       "source_bbox": [
-        335,
-        307,
-        553,
-        400
+        495,
+        346,
+        537,
+        395
       ]
     },
     {
-      "semantic_id": "toy_cheeks",
-      "display_name": "うさぎ・頬",
-      "palette_id": "toy_cheek",
+      "semantic_id": "eye_white",
+      "display_name": "白目と瞳の反射",
+      "palette_id": "eye_white",
       "group_path": [
-        "ぬいぐるみ"
+        "キャラクター",
+        "顔"
       ],
       "coloring_notes": "",
       "base_layer_path": [
-        "ぬいぐるみ",
-        "うさぎ・頬 [toy_cheeks]",
+        "キャラクター",
+        "顔",
+        "白目と瞳の反射 [eye_white]",
+        "白目と瞳の反射_Base"
+      ],
+      "source_bbox": [
+        333,
+        306,
+        649,
+        398
+      ]
+    },
+    {
+      "semantic_id": "collar",
+      "display_name": "白い襟と縁",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "着物"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物",
+        "白い襟と縁 [collar]",
+        "白い襟と縁_Base"
+      ],
+      "source_bbox": [
+        208,
+        496,
+        512,
+        694
+      ]
+    },
+    {
+      "semantic_id": "dress_body",
+      "display_name": "着物の身頃と襟",
+      "palette_id": "black_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "着物"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物",
+        "着物の身頃と襟 [dress_body]",
+        "着物の身頃と襟_Base"
+      ],
+      "source_bbox": [
+        204,
+        521,
+        523,
+        701
+      ]
+    },
+    {
+      "semantic_id": "dress_sleeve_left",
+      "display_name": "着物・画面左の袖",
+      "palette_id": "black_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "着物"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物",
+        "着物・画面左の袖 [dress_sleeve_left]",
+        "着物・画面左の袖_Base"
+      ],
+      "source_bbox": [
+        104,
+        602,
+        527,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "dress_sleeve_right",
+      "display_name": "着物・画面右の袖",
+      "palette_id": "black_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "着物"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "着物",
+        "着物・画面右の袖 [dress_sleeve_right]",
+        "着物・画面右の袖_Base"
+      ],
+      "source_bbox": [
+        649,
+        961,
+        840,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "shoulder_frills",
+      "display_name": "肩と胸のフリル",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン",
+        "肩と胸のフリル [shoulder_frills]",
+        "肩と胸のフリル_Base"
+      ],
+      "source_bbox": [
+        67,
+        529,
+        551,
+        837
+      ]
+    },
+    {
+      "semantic_id": "apron_chest",
+      "display_name": "エプロン・胸",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン",
+        "エプロン・胸 [apron_chest]",
+        "エプロン・胸_Base"
+      ],
+      "source_bbox": [
+        346,
+        683,
+        528,
+        949
+      ]
+    },
+    {
+      "semantic_id": "apron_waist",
+      "display_name": "エプロン・腰と裾",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "エプロン",
+        "エプロン・腰と裾 [apron_waist]",
+        "エプロン・腰と裾_Base"
+      ],
+      "source_bbox": [
+        0,
+        900,
+        797,
+        1232
+      ]
+    },
+    {
+      "semantic_id": "cuff_left",
+      "display_name": "袖口フリル・画面左",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "袖口"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "袖口",
+        "袖口フリル・画面左 [cuff_left]",
+        "袖口フリル・画面左_Base"
+      ],
+      "source_bbox": [
+        454,
+        870,
+        559,
+        1145
+      ]
+    },
+    {
+      "semantic_id": "cuff_right",
+      "display_name": "袖口フリル・画面右",
+      "palette_id": "white_fabric",
+      "group_path": [
+        "キャラクター",
+        "衣装",
+        "袖口"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "衣装",
+        "袖口",
+        "袖口フリル・画面右 [cuff_right]",
+        "袖口フリル・画面右_Base"
+      ],
+      "source_bbox": [
+        629,
+        920,
+        767,
+        1074
+      ]
+    },
+    {
+      "semantic_id": "hands",
+      "display_name": "手と指",
+      "palette_id": "skin",
+      "group_path": [
+        "キャラクター",
+        "肌"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "キャラクター",
+        "肌",
+        "手と指 [hands]",
+        "手と指_Base"
+      ],
+      "source_bbox": [
+        477,
+        696,
+        736,
+        1028
+      ]
+    },
+    {
+      "semantic_id": "rabbit_ears",
+      "display_name": "うさぎ・耳の外側",
+      "palette_id": "rabbit_cream",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・耳の外側 [rabbit_ears]",
+        "うさぎ・耳の外側_Base"
+      ],
+      "source_bbox": [
+        604,
+        408,
+        840,
+        594
+      ]
+    },
+    {
+      "semantic_id": "rabbit_inner_ears",
+      "display_name": "うさぎ・耳の内側",
+      "palette_id": "rabbit_inner_pink",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・耳の内側 [rabbit_inner_ears]",
+        "うさぎ・耳の内側_Base"
+      ],
+      "source_bbox": [
+        642,
+        449,
+        834,
+        586
+      ]
+    },
+    {
+      "semantic_id": "rabbit_head",
+      "display_name": "うさぎ・頭",
+      "palette_id": "rabbit_cream",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・頭 [rabbit_head]",
+        "うさぎ・頭_Base"
+      ],
+      "source_bbox": [
+        505,
+        538,
+        736,
+        728
+      ]
+    },
+    {
+      "semantic_id": "rabbit_eyes",
+      "display_name": "うさぎ・目鼻",
+      "palette_id": "rabbit_dark",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "茶色の目鼻。線回収にも暗部が残り、Base色替えの効きが弱い可能性がある。",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・目鼻 [rabbit_eyes]",
+        "うさぎ・目鼻_Base"
+      ],
+      "source_bbox": [
+        507,
+        571,
+        738,
+        687
+      ]
+    },
+    {
+      "semantic_id": "rabbit_cheeks",
+      "display_name": "うさぎ・頬",
+      "palette_id": "rabbit_cheek_pink",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "左右の頬は同じピンクの円形。耳内側・リボンとは独立。",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・頬 [rabbit_cheeks]",
         "うさぎ・頬_Base"
       ],
       "source_bbox": [
         592,
-        617,
-        735,
-        709
+        576,
+        734,
+        708
+      ]
+    },
+    {
+      "semantic_id": "rabbit_body",
+      "display_name": "うさぎ・胴と手足",
+      "palette_id": "rabbit_cream",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・胴と手足 [rabbit_body]",
+        "うさぎ・胴と手足_Base"
+      ],
+      "source_bbox": [
+        520,
+        692,
+        760,
+        949
+      ]
+    },
+    {
+      "semantic_id": "rabbit_ribbons",
+      "display_name": "うさぎ・リボン",
+      "palette_id": "ribbon_magenta",
+      "group_path": [
+        "小物",
+        "うさぎ"
+      ],
+      "coloring_notes": "耳元と胸元のリボンは同じ濃いピンク。花びらとは別素材。",
+      "base_layer_path": [
+        "小物",
+        "うさぎ",
+        "うさぎ・リボン [rabbit_ribbons]",
+        "うさぎ・リボン_Base"
+      ],
+      "source_bbox": [
+        600,
+        520,
+        744,
+        776
       ]
     }
   ]

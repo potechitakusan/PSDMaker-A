@@ -118,7 +118,10 @@ def test_ai_lighting_is_reviewed_scalar_only_and_never_replaces_lines(tmp_path,s
     path=tmp_path/'light.png';Image.fromarray(guide).save(path)
     coloring.prepare_lighting(job,path,max_shift=0)
     with pytest.raises(ValueError,match='Review lighting'):coloring.build_colored(job)
-    plan=read_json(job/'semantic_plan.json');plan['lighting'].update(reviewed=True,notes='Synthetic fixture: fixed geometry, two lighting bands')
+    plan=read_json(job/'semantic_plan.json')
+    assert plan['lighting']['color_model']=='source_tones'  # new jobs default to measured tones
+    # The legacy gray model stays available and byte-for-byte neutral.
+    plan['lighting'].update(reviewed=True,color_model='neutral',notes='Synthetic fixture: fixed geometry, two lighting bands')
     write_json(job/'semantic_plan.json',plan)
     result=coloring.build_colored(job)
     assert result['passed']
@@ -156,3 +159,63 @@ def test_local_gap_split_keeps_other_region_ids_and_invalidates_plan(tmp_path,so
         for r in result['new_regions']:
             x,y=r['seed_xy'];assert not a['barriers'][y,x] and a['regions'][y,x]==r['number']
     assert read_json(job/'semantic_plan.json')['classification_source']=='partial_review'
+
+
+def test_source_tone_lighting_reaches_material_ramp_without_guide_colors(tmp_path,source):
+    job=assigned_job(tmp_path,source)
+    palette=read_json(job/'source_palette.json')
+    base=np.array(palette['palettes']['cloth']['rgb'],float)
+    # A shaded, grayish Base like a dominant-color estimate of white cloth.
+    shadow=[round(base[0]*.55),round(base[1]*.45),round(base[2]*.6)];peak=[252,250,248]
+    palette['palettes']['cloth']['tones']=dict(source='test',status='measured',bands=dict(
+        shadow=dict(rgb=shadow,L=40.0,C=20.0),bright=dict(rgb=peak,L=98.5,C=1.0),peak=dict(rgb=peak,L=98.5,C=1.0)))
+    write_json(job/'source_palette.json',palette)
+    config=read_json(job/'coloring_job.json');config['palette_hash']=digest(job/'source_palette.json')
+    write_json(job/'coloring_job.json',config)
+    guide=np.asarray(Image.open(job/'flat_preview.png').convert('RGB')).copy()
+    guide[12:25,12:36]=[0,40,0]      # dark, strongly green: hue must not be copied
+    guide[25:36,12:36]=[255,255,255]
+    path=tmp_path/'light.png';Image.fromarray(guide).save(path)
+    coloring.prepare_lighting(job,path,max_shift=0)
+    plan=read_json(job/'semantic_plan.json');plan['lighting'].update(reviewed=True,notes='Synthetic ramp endpoints')
+    write_json(job/'semantic_plan.json',plan)
+    result=coloring.build_colored(job)
+    assert result['passed'] and result['lighting_color_model']=='source_tones'
+    assert result['tone_reach']['cloth']['reachable'] and not result['tone_reach_warnings']
+    out=np.asarray(Image.open(job/'reconstruction.png').convert('RGB'),float)
+    np.testing.assert_allclose(out[18,24],shadow,atol=3)
+    np.testing.assert_allclose(out[30,24],peak,atol=3)
+    # Base stays the inherited Base; only Shadow/Highlight layers carry the ramp.
+    psd=PSDImage.open(result['psd'])
+    layers={p.name:p for p in psd.descendants() if not p.is_group()}
+    rgba=np.asarray(layers['Cloth_Base'].topil().convert('RGBA'))
+    assert np.unique(rgba[rgba[...,3]>0,:3],axis=0).tolist()==[base.astype(int).tolist()]
+
+
+def test_material_lighting_falls_back_to_neutral_without_tones():
+    neutral=([.3,.3,.3],[.7,.7,.7])
+    base=np.array([.75,.72,.79],np.float32)
+    shadow,light,model=coloring.material_lighting(base,None,neutral)
+    assert model=='neutral' and shadow==neutral[0]
+    tones=dict(bands=dict(shadow=dict(rgb=[96,92,101]),peak=dict(rgb=[255,255,255])))
+    shadow,light,model=coloring.material_lighting(base,tones,neutral)
+    assert model=='source_tones'
+    np.testing.assert_allclose(base*shadow,np.array([96,92,101])/255,atol=1e-3)
+    np.testing.assert_allclose(base+(1-base)*light,1,atol=1e-6)
+
+
+def test_levels_tone_mapping_matches_source_exposure_without_stretching_noise():
+    tones=dict(bands=dict(midtone=dict(rgb=[200,200,200]),bright=dict(rgb=[250,250,250])))
+    mid,bright=200/255,250/255
+    # A dim guide: median .5, 87.5th percentile .6 -> gain clipped at 2.
+    sample=np.linspace(.3,.7,801)
+    out=coloring.levels_luma(np.array([.5,.6,.3]),sample,tones)
+    low,high=np.percentile(sample,[50,87.5])
+    gain=min((bright-mid)/(high-low),2)
+    np.testing.assert_allclose(out[0],mid,atol=1e-6)
+    np.testing.assert_allclose(out[1],mid+(.6-low)*gain,atol=1e-6)
+    assert out[2]<out[0]<out[1]<=1  # light/shadow order of the guide is kept
+    # Flat guide: tiny noise must not be stretched beyond the 2x gain cap.
+    noisy=.5+np.random.RandomState(0).normal(0,.002,1000)
+    mapped=coloring.levels_luma(noisy,noisy,tones)
+    assert mapped.std()<=2.05*noisy.std()

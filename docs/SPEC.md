@@ -16,7 +16,7 @@ line_cleanupは補正ガイドに裏付けされない点・塗り跡を塗り�
 
 ### 第2機能への引き継ぎ
 
-artistのbuild-compactは `coloring_reference.json` をPSD隣とjobに自動保存する。既存jobはexport-coloring-referenceで追加できる。実PSDから単色Base RGB、素材IDと対応パーツ、PSD内Base階層・bboxを記録し、意味計画からdisplay_name/group_path/任意のcoloring_notesを引き継ぐ。画像サイズ・PSDと計画のSHA-256を含む。元jobの絶対パス・領域番号・マスクは含めない。
+artistのbuild-compactは `coloring_reference.json` をPSD隣とjobに自動保存する。既存jobはexport-coloring-referenceで追加できる。実PSDから単色Base RGB、素材IDと対応パーツ、PSD内Base階層・bboxを記録し、意味計画からdisplay_name/group_path/任意のcoloring_notesを引き継ぐ。画像サイズ・PSDと計画のSHA-256を含む。元jobの絶対パス・領域番号・マスクは含めない。compact jobから書き出す場合、各パレットに任意の`tones`を付ける。元絵の線を除いた下塗り（underlying、回収線の周辺1pxを除外）をBaseマスク内で測った明度3〜15/40〜60/60〜80/80〜95/95〜99.5%帯（shadow/midtone/light/bright/peak）のRGB・L*・C*。Baseは面積最大の色で陰寄りになり得るため、完成時の明暗幅を数値だけで引き継ぐ。
 
 PSDとJSONだけで第2機能の参照として使える。読込時にPSDハッシュ・サイズ・実Base色とパーツ対応を検証する。曖昧なBase名、非単色Base、共有ID内の色不一致を拒否する。書式と制約は [COLORING_REFERENCE.md](COLORING_REFERENCE.md)。JSONの意味記述と事後レビューの正しさはハッシュでは保証しない。
 
@@ -28,7 +28,7 @@ PSDとJSONだけで第2機能の参照として使える。読込時にPSDハッ
 
 領域のbbox・面積・Python算出seed_xy・画像端接触を保存する。Astraが全領域を目視し、意味パーツとpalette_idを割り当てる。fill-regionは座標塗り、split-color-regionは局所隙間補助で対象外IDを保持する。未知色・領域、重複、範囲外、未割当を拒否する。画像端への接触だけで背景とは決めない。
 
-paint-flatsは参照PSDの実Base RGBを厳密継承する。新しい線画のパーツは改めて分類し、元画像の領域ID・bboxをコピーしない。任意の全体AI照明案はprepare-lightingで位置合わせし、Astraが実画像と数値を確認する。線画は変形せず、ガイドの明度を固定色Multiply/Screenの透明度に使う。
+paint-flatsは参照PSDの実Base RGBを厳密継承する。新しい線画のパーツは改めて分類し、元画像の領域ID・bboxをコピーしない。任意の全体AI照明案はprepare-lightingで位置合わせし、Astraが実画像と数値を確認する。線画は変形せず、ガイドの明度を固定色Multiply/Screenの透明度に使う。照明色はlighting.color_modelで選ぶ。新規prepare-lightingはパレットにtonesがあれば`source_tones`とし、素材ごとにShadow色=shadow帯/Base、Highlight色=(peak帯−Base)/(1−Base)を使う。不透明度100%で元絵の暗部・最明部に届き、灰色照明による白布の頭打ちや明部・影の脱色を防ぐ。tonesのない素材と旧jobは`neutral`（一定グレー、temperature指定可）。ガイドのRGB色相は使わない。build-coloredはanalysisのtone_reachに素材別の到達可能な明度と元絵bright帯を記録し、届かない素材をtone_reach_warningsに出す。lighting.tone_mappingは`absolute`（既定、ガイドの明度をそのまま使う）か`source_levels`。後者はパレットごとにガイド明度の中央値を元絵midtone、87.5%点をbrightへ直線で合わせ、倍率を0.5〜2に制限する。照明案の露出や旧方式で頭打ちになった明るさを補正し、ガイドのノイズは増幅しない。
 
 prepare-coloringは実参照PSDのsource_appearance.pngと素材別の明度・色味を保存する。照明案には下塗りと参照完成色の両方を渡す。post-review（単独ではreview-coloring-tones）は両PSDの素材内側の明度40〜60/60〜80/80〜95%帯のRGB・L*・C*を比較し、差3以上を注意表示する。統計的比較は別ポーズの一致点数や自動合否ではない。finish-reviewはmotifs_lightingに完成色比較・色見本画像の根拠を必須とする。旧着色jobの再確定はpost-reviewを再実行する。Base一致だけで印象の一致とは扱わない。
 

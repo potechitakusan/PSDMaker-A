@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from psd_tools import PSDImage
-from scipy.ndimage import binary_erosion
+from scipy.ndimage import binary_dilation, binary_erosion
 from skimage.color import rgb2lab
 
 from .coloring_reference import layer_path
@@ -12,7 +12,12 @@ from .composition import render_psd
 from .storage import digest, read_json, write_json, save_image
 
 
-def summarize(rgb, mask):
+REVIEW_BANDS = [('midtone', 40, 60), ('light', 60, 80), ('bright', 80, 95)]
+# Endpoints of a material's tone ramp: the coloring Shadow/Highlight colors aim here.
+ANCHOR_BANDS = [('shadow', 3, 15)] + REVIEW_BANDS + [('peak', 95, 99.5)]
+
+
+def summarize(rgb, mask, bands=REVIEW_BANDS):
     """Interior quantile bands reduce outline/shadow and specular contamination.
 
     These are statistical bands, not a claim that illumination is understood.
@@ -22,18 +27,19 @@ def summarize(rgb, mask):
     if len(pixels) < 32:
         return {'status': 'insufficient_interior', 'pixels': len(pixels)}
     lab = rgb2lab(pixels.astype(float) / 255)
-    bands = {}
-    for name, low, high in [('midtone', 40, 60), ('light', 60, 80), ('bright', 80, 95)]:
+    measured = {}
+    for name, low, high in bands:
         lo, hi = np.percentile(lab[:, 0], [low, high])
         selected = (lab[:, 0] >= lo) & (lab[:, 0] <= hi)
         sample = lab[selected]
-        bands[name] = dict(rgb=pixels[selected].mean(0).round(3).tolist(),
+        measured[name] = dict(rgb=pixels[selected].mean(0).round(3).tolist(),
             L=round(float(sample[:, 0].mean()), 3),
             C=round(float(np.linalg.norm(sample[:, 1:], axis=1).mean()), 3))
-    return dict(status='measured', pixels=len(pixels), bands=bands)
+    return dict(status='measured', pixels=len(pixels), bands=measured)
 
 
-def material_samples(psd, parts, rgb):
+def material_samples(psd, parts, rgb, exclude=None, bands=REVIEW_BANDS):
+    """exclude: optional boolean canvas, e.g. ink pixels of the original."""
     pixels = {tuple(layer_path(p)): p for p in psd.descendants() if not p.is_group()}
     masks = {}
     for part in parts:
@@ -55,7 +61,30 @@ def material_samples(psd, parts, rgb):
         left, top, right, bottom = max(0,x0), max(0,y0), min(psd.width,x1), min(psd.height,y1)
         if right > left and bottom > top:
             mask[top:bottom,left:right] |= rgba[top-y0:bottom-y0,left-x0:right-x0,3] > 250
-    return {key: summarize(rgb, mask) for key,mask in masks.items()}
+    if exclude is not None:
+        masks = {key: mask & ~exclude for key, mask in masks.items()}
+    return {key: summarize(rgb, mask, bands) for key,mask in masks.items()}
+
+
+def original_tones(job, psd, parts):
+    """Tone ramp of the source illustration itself, per palette.
+
+    Uses the line-free underpainting of a compact job so outlines do not count
+    as shadows. Returns None when the job has no original arrays.
+    """
+    path = Path(job) / 'compact_arrays.npz'
+    if not path.exists():
+        return None
+    with np.load(path) as arrays:
+        if 'underlying' not in arrays.files:
+            return None
+        rgb = np.clip(arrays['underlying'] * 255, 0, 255)
+        line = arrays['alpha'] > .05  # recovered line opacity, not image alpha
+    if rgb.shape[:2] != (psd.height, psd.width):
+        return None
+    exclude = binary_dilation(line, iterations=1)
+    samples = material_samples(psd, parts, rgb, exclude, ANCHOR_BANDS)
+    return {key: dict(source='original_underlying', **value) for key, value in samples.items()}
 
 
 def source_appearance(palette, folder):
