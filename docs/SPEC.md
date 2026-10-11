@@ -72,6 +72,6 @@ input/work/output/backup/.tmp、docsのジョブ・ローカル状態は公開�
 
 ## 対象外
 
-Base選択の任意証跡 `base_selection`（候補・理由・reviewed）は、第2機能のsource-job経由でもsource-reference経由でも継承する。公開例の最新参照はexamples/outputのPSDと隣接JSON、対応入力はexamples/reference.jpg、主着色例はcoloring（imagegen/source_levels）、比較例はcoloring_normals（左上手前/source_ramp）。同ポーズの色・照明試験であり、新ポーズの意味分類の再検証とは区別する。通常のREADME・手順は最新作例だけを案内し、旧作例へのリンクを置かない。
+Base選択の任意証跡 `base_selection`（候補・理由・reviewed）は、第2機能のsource-job経由でもsource-reference経由でも継承する。公開例の参照はexamples/outputのPSDと隣接JSON、対応入力はexamples/reference.jpg、別ポーズの主着色例はcoloring（imagegen/source_levels）、同じ別ポーズの比較例はcoloring_normals（左上手前/source_ramp）。線画は作例作成に限りimagegenで生成し、通常は利用者が提供する。新線画の領域を新規分類し、参照のマスク/座標を移植しない。通常のREADME・手順は最新作例だけを案内し、旧作例へのリンクを置かない。
 
 隠れたパーツの描き足し、完全な隙間復元、Live2D用パーツ展開、ベクター線、特殊発光・厚塗りの完全分離、実ペイントアプリでの互換性保証は含まない。同じjobに複数の書込CLIを同時実行しない。プレビューは読取り専用なので併用できる。
