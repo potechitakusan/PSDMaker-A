@@ -24,7 +24,7 @@ def portable(tmp_path):
         dict(semantic_id='background', regions=[1]),
         dict(semantic_id='cloth', display_name='衣装', palette_id='fabric', regions=[2],
              group_path=['人物', '衣装'], coloring_notes='左右で同じ色を使う')]))
-    configure_editing(source)
+    configure_editing(source,base_mode='dominant')
     build_compact(source)
     exported = source / 'coloring_reference.json'
     assert exported.exists()  # artist builds produce the handoff automatically

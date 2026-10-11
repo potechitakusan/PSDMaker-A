@@ -74,6 +74,10 @@ class PreviewWindow:
         self.image_bounds = None
         self.updates = 0
         self.mode = tk.StringVar(value="PSD")
+        self.light_value=tk.StringVar(value='01  左上手前 1/9')
+        self.light_request=None
+        self.light_generation=0
+        self.light_job=None
         root.title("PsdMaker — PSD進捗プレビュー")
         root.geometry("1180x820")
         root.minsize(780, 520)
@@ -95,10 +99,21 @@ class PreviewWindow:
         self.path_label.pack(fill="x")
         toolbar = ttk.Frame(root, padding=(18, 0, 18, 10))
         toolbar.pack(fill="x")
-        for name in ("PSD", "参照", "差分", "線画", "背景", "配色"):
-            ttk.Radiobutton(toolbar, text=name, variable=self.mode, value=name, command=self.draw).pack(side="left", padx=7)
+        for name in ("PSD", "参照", "差分", "線画", "背景", "配色", "照明"):
+            ttk.Radiobutton(toolbar, text=name, variable=self.mode, value=name,
+                            command=self.choose_light if name=='照明' else self.draw).pack(side="left", padx=7)
         self.detail_label = ttk.Label(toolbar, text="PSDが保存されると自動更新します")
         self.detail_label.pack(side="right")
+        lights=ttk.Frame(root,padding=(18,0,18,10));lights.pack(fill='x')
+        ttk.Label(lights,text='光源プレビュー').pack(side='left',padx=(0,8))
+        from .light_presets import light_presets
+        self.light_choices=[f'{p["id"]:02d}  {p["label"]}' for p in light_presets()]
+        self.light_picker=ttk.Combobox(lights,textvariable=self.light_value,values=self.light_choices,
+                                     state='disabled',width=33,height=16)
+        self.light_picker.pack(side='left')
+        self.light_picker.bind('<<ComboboxSelected>>',self.choose_light)
+        self.light_label=ttk.Label(lights,text='法線照明のjobで使用できます')
+        self.light_label.pack(side='left',padx=12)
         self.seed_label = ttk.Label(root, text="参照画像をクリックすると、色選択に使う原寸座標とRGBを確認できます", padding=(18,0,18,8))
         self.seed_label.pack(fill="x")
         pane = ttk.Panedwindow(root, orient="horizontal")
@@ -140,6 +155,17 @@ class PreviewWindow:
         self.target = None
         self.refresh.set()
 
+    def choose_light(self,event=None):
+        if not self.light_job:return
+        preset=self.light_picker.current()+1
+        if not 1<=preset<=50:return
+        self.light_generation+=1
+        self.light_request=(self.light_job,preset,self.light_generation)
+        self.images.pop('照明',None)
+        self.mode.set('照明')
+        self.light_label.configure(text='照明を計算中…（PSDは変更しません）')
+        self.draw()
+
     def send(self, payload):
         try:
             self.messages.put(payload, timeout=0.1)
@@ -157,6 +183,7 @@ class PreviewWindow:
         reader = StablePSDReader()
         last_target = None
         last_aux = {}
+        light_scene=None;light_stamp=None;last_request=None;light_cache={}
         while not self.stop.is_set():
             try:
                 target = self.target
@@ -172,12 +199,25 @@ class PreviewWindow:
                     reader = StablePSDReader()
                     last_aux = {}
                     last_target = target
+                    light_scene=None;light_stamp=None;last_request=None;light_cache={}
+                    self.light_request=None
                     self.send(("target", psd))
                 forced = self.refresh.is_set()
                 self.refresh.clear()
                 state = read_json(Path(job) / "status.json") if job and (Path(job) / "status.json").exists() else {}
                 state_text = f"{state.get('phase', '監視中')}  |  {state.get('message', 'PSDの上書きを監視しています')}"
                 if job:
+                    plan_path=Path(job)/'semantic_plan.json'
+                    normal_plan=read_json(plan_path).get('lighting') if plan_path.exists() else None
+                    supported=bool(normal_plan and normal_plan.get('method')=='normals')
+                    stamp=(target,file_stamp(plan_path),file_stamp(Path(job)/'flat_preview.png'),
+                           file_stamp(Path(job)/'coloring_arrays.npz'),file_stamp(Path(job)/'source_palette.json'),
+                           file_stamp(normal_plan['normal_path'])) if supported else (target,None)
+                    if stamp!=light_stamp:
+                        light_scene=None;light_cache={};light_stamp=stamp;last_request=None
+                        from .light_presets import matching_preset
+                        preset=matching_preset(normal_plan['light'],normal_plan.get('enabled',True)) if supported else None
+                        self.send(('light_available',(job if supported else None,preset or 1)))
                     for filename, name in (("reference.png", "参照"), ("diff.png", "差分"),
                                            ("editing_lineart_white.png", "線画"),
                                            ("background_only.png", "背景"), ("palette_review.png", "配色")):
@@ -188,6 +228,20 @@ class PreviewWindow:
                                 picture = source.convert("RGBA")
                             last_aux[name] = stamp
                             self.send(("aux", (name, picture)))
+                request=self.light_request
+                if request and request!=last_request and request[0]==job:
+                    try:
+                        from .normal_preview import NormalPreviewScene
+                        if light_scene is None:light_scene=NormalPreviewScene(job)
+                        _,preset,generation=request
+                        if preset not in light_cache:
+                            if len(light_cache)>=3:light_cache.pop(next(iter(light_cache)))
+                            light_cache[preset]=light_scene.render(preset)
+                        last_request=request
+                        self.send(('light_image',(request,light_cache[preset])))
+                    except Exception as exc:
+                        last_request=request
+                        self.send(('light_error',(request,str(exc))))
                 if not Path(psd).exists():
                     self.send(("status", state_text + "  |  PSDの初回保存を待っています"))
                 else:
@@ -210,12 +264,31 @@ class PreviewWindow:
                 elif kind == "target":
                     self.path_label.configure(text=payload)
                     self.images.clear()
+                    self.light_job=None
+                    self.light_picker.configure(state='disabled')
+                    self.light_label.configure(text='法線照明のjobで使用できます')
                     self.updates = 0
                     self.tree.delete(*self.tree.get_children())
                     self.draw()
                 elif kind == "aux":
                     self.images[payload[0]] = payload[1]
                     self.draw()
+                elif kind=='light_available':
+                    self.light_job,preset=payload
+                    self.light_picker.configure(state='readonly' if self.light_job else 'disabled')
+                    self.light_picker.current(preset-1)
+                    self.images.pop('照明',None)
+                    self.light_label.configure(text='光源を選んで比較できます（PSDは変更しません）' if self.light_job else '法線照明のjobで使用できます')
+                    if self.mode.get()=='照明' and self.light_job:self.choose_light()
+                elif kind=='light_image':
+                    request,picture=payload
+                    if request==self.light_request and request[0]==self.light_job:
+                        self.images['照明']=picture
+                        self.light_label.configure(text=f'{self.light_choices[request[1]-1]}（PSDは変更しません）')
+                        self.draw()
+                elif kind=='light_error':
+                    request,error=payload
+                    if request==self.light_request:self.light_label.configure(text='照明を表示できません: '+error[:100])
                 elif kind == "image":
                     self.images["PSD"] = payload["image"]
                     self.updates += 1

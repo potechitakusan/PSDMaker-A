@@ -16,7 +16,7 @@ LIGHTING = {
 }
 
 
-def configure_editing(job, layer_range='auto', color_tolerance='auto', lighting='neutral', lineart='monochrome', detail_mode='relative'):
+def configure_editing(job, layer_range='auto', color_tolerance='auto', lighting='neutral', lineart='monochrome', detail_mode='relative', base_mode='review_candidates'):
     job = Path(job).resolve()
     plan = read_json(job / 'semantic_plan.json')
     requested = 'auto'
@@ -34,8 +34,12 @@ def configure_editing(job, layer_range='auto', color_tolerance='auto', lighting=
         raise ValueError('Unknown lighting or lineart mode')
     if detail_mode not in ('relative', 'pigment'):
         raise ValueError('detail_mode must be relative or pigment')
+    if base_mode not in ('dominant','review_candidates'):
+        raise ValueError('base_mode must be dominant or review_candidates')
+    prior=plan.get('editing',{}).get('base_colors',{})
     plan['editing'] = dict(profile='artist', layer_range=requested, color_tolerance=tolerance,
-                           lighting=lighting, lineart=lineart, detail_mode=detail_mode, line_cleanup=True)
+                           lighting=lighting, lineart=lineart, detail_mode=detail_mode, line_cleanup=True,
+                           base_mode=base_mode,base_colors=prior)
     # Artist budget supersedes the legacy total-with-folders upper bound.
     write_json(job / 'semantic_plan.json', plan)
     return {'job': str(job), 'editing': plan['editing'],
@@ -54,7 +58,7 @@ def dominant_color(target, mask, alpha):
     return np.median(sample[inverse == counts.argmax()], axis=0)
 
 
-def resolve_settings(plan, labels, target, alpha):
+def resolve_settings(plan, labels, target, alpha, require_review=True):
     editing = plan['editing']
     if editing.get('profile') != 'artist' or editing.get('lighting', 'neutral') not in LIGHTING:
         raise ValueError('Invalid artist profile or lighting')
@@ -71,10 +75,28 @@ def resolve_settings(plan, labels, target, alpha):
         if not isinstance(key, str) or not key:
             raise ValueError('palette_id must be a nonempty string')
         palette_groups.setdefault(key, []).append(p['semantic_id'])
+    from .base_colors import base_candidates
+    candidates=base_candidates(plan,labels,target,alpha)
+    selections=editing.get('base_colors',{})
+    if not isinstance(selections,dict) or set(selections)-set(palette_groups):
+        raise ValueError('Unknown palette in editing.base_colors')
+    mode=editing.get('base_mode','dominant')
+    if mode not in ('dominant','review_candidates'):raise ValueError('Unknown Base mode')
+    missing=sorted(set(palette_groups)-set(selections))
+    if require_review and mode=='review_candidates' and missing:
+        raise ValueError('Review and select Base candidates first: '+', '.join(missing))
     shared, palette_report, differences = {}, [], []
     for key, members in palette_groups.items():
         # Equal weight per semantic part prevents the large sleeve dominating eyes etc.
         palette = np.clip(np.median([colors[name] for name in members], axis=0), 1/255, 254/255)
+        choice=selections.get(key)
+        if choice:
+            expected=candidates['palettes'][key]['candidates'].get(choice.get('candidate'))
+            if (choice.get('reviewed') is not True or not str(choice.get('notes','')).strip()
+                    or choice.get('input_hash')!=candidates['input_hash'] or choice.get('rgb')!=expected
+                    or expected is None):
+                raise ValueError('Stale or unreviewed Base selection: '+key)
+            palette=np.asarray(expected,dtype=np.float32)/255
         for name in members:
             shared[name] = palette
         original_lab = rgb2lab(np.array([colors[name] for name in members]).reshape(-1, 1, 3))[:, 0]
@@ -84,7 +106,9 @@ def resolve_settings(plan, labels, target, alpha):
         palette_report.append({'palette_id': key, 'parts': members,
                                'shared_rgb': np.round(palette * 255).astype(int).tolist(),
                                'original_rgb': {name: np.round(colors[name] * 255).astype(int).tolist() for name in members},
-                               'max_base_delta_e76': float(drift.max())})
+                               'max_base_delta_e76': float(drift.max()),
+                               'base_selection':choice or dict(candidate='dominant',reviewed=False),
+                               'base_candidates':candidates['palettes'][key]['candidates']})
     tolerance = editing.get('color_tolerance', 'auto')
     if tolerance == 'auto':
         # Conservative 2..8 Delta E76 allowance, informed by reviewed shared materials.
@@ -109,7 +133,7 @@ def resolve_settings(plan, labels, target, alpha):
                         layer_range_reason='Reviewed material count; Base/Shadow/Highlight plus relative color correction or intentional pigment',
                         resolved_color_tolerance=round(tolerance, 3), max_paint_delta_e76=tolerance / 5,
                         tolerance_reason='User value or conservative allowance from shared-material base drift',
-                        palettes=palette_report)
+                        base_mode=mode,unselected_base_palettes=missing,palettes=palette_report)
 
 
 def decompose_artist(target, base_color, tolerance, lighting='neutral'):
@@ -273,7 +297,12 @@ def review_editing(job):
         region_sheets(arrays['rgb'], labels, job, 'semantic_review',
                       {i:p['semantic_id'] for i,p in enumerate(plan['parts'],1)})
         audit = background_audit(arrays['rgb'], labels, plan['parts'], job)
-        _, settings = resolve_settings(plan, labels, arrays['underlying'], arrays['alpha'])
+        target,alpha=arrays['underlying'],arrays['alpha']
+        if plan['editing'].get('line_cleanup',False):target,alpha,_=clean_linework(arrays)
+        _, settings = resolve_settings(plan, labels, target, alpha,require_review=False)
     write_json(job/'editing_proposal.json', settings)
+    from .base_colors import review_base_colors
+    candidates=review_base_colors(job)
     return {'job':str(job), 'preferences':settings, 'background_review':audit,
-            'next_action':'Inspect semantic_review and background_only; repair assignments before astra_reviewed/build-compact'}
+            'base_candidates':candidates,
+            'next_action':'Inspect semantic_review, background_only and all Base candidate sheets; select Base with notes before build-compact'}

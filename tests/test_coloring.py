@@ -11,6 +11,7 @@ from anime_layer_agent.artist import configure_editing
 from anime_layer_agent.pipeline import demo
 from anime_layer_agent.storage import read_json,write_json,digest
 from anime_layer_agent.post_review import post_review,finish_review
+from anime_layer_agent.normal_lighting import prepare_normal_lighting, normal_alphas, validate_normals
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def source(tmp_path):
     write_json(job/'semantic_plan.json',dict(classification_source='astra_reviewed',parts=[
         dict(semantic_id='background',regions=[1]),
         dict(semantic_id='cloth',display_name='Cloth',palette_id='cloth',regions=[2])]))
-    configure_editing(job);build_compact(job)
+    configure_editing(job,base_mode='dominant');build_compact(job)
     return job
 
 
@@ -42,6 +43,45 @@ def assigned_job(tmp_path,source):
     write_json(job/'semantic_plan.json',plan)
     coloring.paint_flats(job)
     return job
+
+
+def test_normal_direction_and_invalid_vectors():
+    n=validate_normals(np.array([[[-.8,0,.6],[.8,0,.6]]]),(1,2))
+    left=normal_alphas(n,[-1,0,1])
+    right=normal_alphas(n,[1,0,1])
+    assert left[1][0,0]>left[1][0,1] and left[0][0,1]>left[0][0,0]
+    np.testing.assert_allclose(left[0],right[0][:,::-1])
+    for value in (np.zeros((1,2,3)),np.full((1,2,3),np.nan),np.ones((2,2,3))):
+        with pytest.raises(ValueError):validate_normals(value,(1,2))
+    with pytest.raises(ValueError):normal_alphas(n,[0,0,0])
+
+
+def test_normal_lighting_preserves_masks_lines_and_rejects_stale_map(tmp_path,source):
+    job=assigned_job(tmp_path,source)
+    baseline=coloring.build_colored(job)
+    old=PSDImage.open(baseline['psd'])
+    before={l.name:np.asarray(l.topil().convert('RGBA')).copy() for l in old.descendants() if not l.is_group()}
+    source_hash=digest(source/'output.psd')
+    n=np.zeros((48,48,3),np.float32);n[...,:]=[-.8,0,.6];n[:,24:]=[.8,0,.6]
+    path=tmp_path/'normals.npy';np.save(path,n)
+    prepare_normal_lighting(job,path,[-1,1,1])
+    with pytest.raises(ValueError,match='Review lighting'):coloring.build_colored(job)
+    plan=read_json(job/'semantic_plan.json')
+    plan['lighting'].update(reviewed=True,notes='Synthetic vectors; no geometry resampling')
+    write_json(job/'semantic_plan.json',plan)
+    result=coloring.build_colored(job)
+    assert result['passed'] and result['lighting_method']=='normals'
+    psd=PSDImage.open(result['psd'])
+    layers={l.name:l for l in psd.descendants() if not l.is_group()}
+    for name,rgba in before.items():np.testing.assert_array_equal(np.asarray(layers[name].topil().convert('RGBA')),rgba)
+    assert digest(source/'output.psd')==source_hash
+    mask=np.zeros((48,48),bool)
+    l=layers['Cloth_Base'];x,y,r,b=l.bbox;mask[y:b,x:r]=np.asarray(l.topil())[...,3]>0
+    for name in ('Cloth_Shadow','Cloth_Highlight'):
+        l=layers[name];x,y,r,b=l.bbox
+        assert np.all(mask[y:b,x:r][np.asarray(l.topil())[...,3]>0])
+    np.save(path,-n)
+    with pytest.raises(ValueError,match='changed'):coloring.build_colored(job)
 
 
 def test_no_implicit_coloring_and_separate_output_required(tmp_path):
@@ -219,3 +259,83 @@ def test_levels_tone_mapping_matches_source_exposure_without_stretching_noise():
     noisy=.5+np.random.RandomState(0).normal(0,.002,1000)
     mapped=coloring.levels_luma(noisy,noisy,tones)
     assert mapped.std()<=2.05*noisy.std()
+
+
+def test_normal_source_ramp_matches_rgb_and_keeps_flat_normals_bounded():
+    from anime_layer_agent.normal_lighting import normal_source_ramp, rgb_lighting_layers
+    base=np.array([.7,.6,.8],np.float32)
+    # Include a tone with both brighter and darker channels than Base.
+    colors=np.array([[.4,.3,.5],[.75,.65,.7],[.85,.8,.8],[.95,.9,.88],[1,.98,.95]])
+    tones=dict(bands={k:dict(rgb=(rgb*255).tolist()) for k,rgb in
+        zip(['shadow','midtone','light','bright','peak'],colors)})
+    sample=np.linspace(0,1,1001)
+    positions=np.array([.09,.5,.7,.875,.9725])
+    target,diag=normal_source_ramp(positions,sample,tones,base)
+    np.testing.assert_allclose(target,colors,atol=1e-6)
+    s,sa,h,ha=rgb_lighting_layers(base,target)
+    out=base*(1-sa[:,None]+s*sa[:,None])
+    out=out+(1-out)*h*ha[:,None]
+    np.testing.assert_allclose(out,colors,atol=1e-6)
+    target,diag=normal_source_ramp(positions,np.full(100,.5),tones,base)
+    assert target is None and diag['status']=='flat_normals'
+    target,diag=normal_source_ramp(positions,sample,tones,base,0)
+    np.testing.assert_allclose(target,np.broadcast_to(base,target.shape),atol=1e-6)
+    with pytest.raises(ValueError):normal_alphas(np.zeros((1,1,3)),[0,0,1],curve={'gamma':0})
+
+
+def test_normal_source_ramp_psd_retains_base_and_color_endpoints(tmp_path,source):
+    job=assigned_job(tmp_path,source)
+    palette=read_json(job/'source_palette.json')
+    tones=palette['palettes']['cloth']['tones']
+    tones['bands']={k:dict(rgb=rgb,L=L,C=10) for k,rgb,L in [
+        ('shadow',[60,50,80],25),('midtone',[150,160,140],65),
+        ('light',[200,210,190],80),('bright',[240,235,230],94),('peak',[250,250,248],98)]}
+    write_json(job/'source_palette.json',palette)
+    config=read_json(job/'coloring_job.json');config['palette_hash']=digest(job/'source_palette.json')
+    write_json(job/'coloring_job.json',config)
+    with np.load(job/'coloring_arrays.npz') as arrays:shape=arrays['ink'].shape
+    z=np.broadcast_to(np.linspace(0,1,shape[0])[:,None],shape)
+    n=np.stack([np.sqrt(1-z*z),np.zeros(shape),z],-1)
+    path=tmp_path/'normals.npy';np.save(path,n)
+    prepare_normal_lighting(job,path,[0,0,1])
+    plan=read_json(job/'semantic_plan.json')
+    plan['lighting'].update(reviewed=True,notes='Synthetic material ramp',tone_mapping='source_ramp')
+    write_json(job/'semantic_plan.json',plan)
+    result=coloring.build_colored(job)
+    assert result['passed'] and result['normal_mapping']['cloth']['status']=='mapped'
+    psd=PSDImage.open(result['psd'])
+    base=next(p for p in psd.descendants() if p.name=='Cloth_Base')
+    rgba=np.asarray(base.topil().convert('RGBA'))
+    assert np.unique(rgba[rgba[...,3]>0,:3],axis=0).tolist()==[palette['palettes']['cloth']['rgb']]
+
+
+def test_50_light_picker_preview_matches_export_and_off_is_flat(tmp_path,source):
+    from anime_layer_agent.normal_preview import NormalPreviewScene
+    from anime_layer_agent.light_presets import select_normal_light
+    job=assigned_job(tmp_path,source)
+    with np.load(job/'coloring_arrays.npz') as a:shape=a['ink'].shape
+    y,x=np.mgrid[-.8:.8:complex(shape[0]),-.8:.8:complex(shape[1])]
+    n=np.stack([x,y,np.ones(shape)],-1);n/=np.linalg.norm(n,axis=-1,keepdims=True)
+    path=tmp_path/'normal.npy';np.save(path,n)
+    prepare_normal_lighting(job,path)
+    plan=read_json(job/'semantic_plan.json')
+    assert plan['lighting']['preset']==1
+    plan['lighting'].update(reviewed=True,notes='Synthetic shape, default front upper-left')
+    write_json(job/'semantic_plan.json',plan)
+    result=coloring.build_colored(job)
+    snapshot={p.name:(digest(p),p.stat().st_mtime_ns) for p in job.iterdir() if p.is_file()}
+    scene=NormalPreviewScene(job)
+    np.testing.assert_array_equal(np.asarray(scene.render(1)),np.asarray(Image.open(job/'coloring_target.png')))
+    np.testing.assert_array_equal(np.asarray(scene.render(50)),np.asarray(Image.open(job/'flat_preview.png')))
+    plan_hash=digest(job/'semantic_plan.json');psd_hash=digest(result['psd'])
+    for i in range(1,51):assert scene.render(i).size==(shape[1],shape[0])
+    assert digest(job/'semantic_plan.json')==plan_hash and digest(result['psd'])==psd_hash
+    assert snapshot=={p.name:(digest(p),p.stat().st_mtime_ns) for p in job.iterdir() if p.is_file()}
+    select_normal_light(job,50)
+    with pytest.raises(ValueError,match='Review lighting'):coloring.build_colored(job)
+    plan=read_json(job/'semantic_plan.json');plan['lighting'].update(reviewed=True,notes='Base only selected')
+    write_json(job/'semantic_plan.json',plan)
+    result=coloring.build_colored(job)
+    assert result['lighting_method']=='none'
+    np.testing.assert_array_equal(np.asarray(Image.open(job/'coloring_target.png')),np.asarray(scene.render(50)))
+    assert not any(l['group'] in ('Shadows','Highlights') for l in read_json(job/'layers.json')['layers'])

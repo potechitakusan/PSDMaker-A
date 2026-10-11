@@ -30,7 +30,7 @@ Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の�
 
 左の画像のような、レイヤー分けされていない完成イラストを第1機能へ渡すと、髪・服・肌・線などを編集しやすく分けたPSDを作れます。
 
-そのPSDと一緒に出力される色情報を保存しておけば、第2機能で中央のような別の線画を着色できます。右は、元のイラストの配色を引き継いで作った着色済みPSDの見た目です。
+そのPSDと一緒に出力される色情報を保存しておけば、第2機能で指定した線画を着色できます。中央は今回の着色用線画、右はBase色を引き継いで影・ハイライトを付けた最新の着色PSDです。
 
 | 第1機能の入力 | 第2機能の線画 | 第2機能の着色結果 |
 |---|---|---|
@@ -38,9 +38,11 @@ Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の�
 
 - [第1機能の編集可能PSD](examples/output/output.psd) ／ [配色・意味情報JSON](examples/output/coloring_reference.json)
 - [第2機能の線画JPG](examples/coloring/lineart.jpg) ／ [着色PSD](examples/coloring/output.psd)
+- [第1機能の完成プレビュー](examples/output/preview.jpg)
+- [法線マップ方式の着色PSD](examples/coloring_normals/output.psd) ／ [プレビュー](examples/coloring_normals/preview.jpg)
 - [作例の仕様・検証結果・制約](examples/README.md)
 
-第2機能の作例は開発試験用に生成した線画を使い、参照PSDのBase色、元絵の明暗幅（tones）とAI照明案の明度から着色したものです。JPGのEXIF/XMP・コメント・生成情報は除去しています。細い線の途切れや照明の細部ずれが残り、制作実務にそのまま使える品質を保証するものではありません。
+現在の第2機能の主例は、Base選択を改善した `examples/output` のPSDとJSONを参照し、Codex組込みimagegenの照明案を素材別に調整して着色しています。法線マップ方式も比較例として用意しています。今回は既存の同ポーズ素材区分でBaseと照明を比較した開発試験で、新ポーズの意味分類を再検証した結果ではありません。JPGのEXIF/XMP・コメント・生成情報は除去しています。細い線の途切れや照明の細部ずれが残り、制作実務にそのまま使える品質を保証するものではありません。
 
 ## セットアップ
 

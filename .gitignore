@@ -17,11 +17,31 @@ __pycache__/
 /examples/output/*
 !/examples/output/output.psd
 !/examples/output/coloring_reference.json
+!/examples/output/preview.jpg
 !/examples/coloring/
 /examples/coloring/*
 !/examples/coloring/lineart.jpg
 !/examples/coloring/preview.jpg
 !/examples/coloring/output.psd
+!/examples/coloring_normals/
+/examples/coloring_normals/*
+!/examples/coloring_normals/output.psd
+!/examples/coloring_normals/preview.jpg
+!/examples/legacy/
+/examples/legacy/*
+!/examples/legacy/v1.3/
+/examples/legacy/v1.3/*
+!/examples/legacy/v1.3/reference.jpg
+!/examples/legacy/v1.3/README.md
+!/examples/legacy/v1.3/output/
+/examples/legacy/v1.3/output/*
+!/examples/legacy/v1.3/output/output.psd
+!/examples/legacy/v1.3/output/coloring_reference.json
+!/examples/legacy/v1.3/coloring/
+/examples/legacy/v1.3/coloring/*
+!/examples/legacy/v1.3/coloring/lineart.jpg
+!/examples/legacy/v1.3/coloring/preview.jpg
+!/examples/legacy/v1.3/coloring/output.psd
 !/examples/README.md
 
 # User-provided illustrations and line art (never publish by default)

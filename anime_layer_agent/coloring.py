@@ -1,6 +1,7 @@
 """Opt-in lineart coloring. No existing decomposition command calls this module."""
 from datetime import datetime, timezone
 from pathlib import Path
+from time import perf_counter
 
 import cv2
 import numpy as np
@@ -137,6 +138,10 @@ def source_palette(source_job):
         if key in palettes and palettes[key]['rgb']!=color:
             raise ValueError(f'Source palette contains different Base colors: {key}')
         palettes.setdefault(key,dict(rgb=color,source_parts=[]))['source_parts'].append(part['semantic_id'])
+        # Source-job and portable-reference preparation carry the same material
+        # selection meaning, as well as the verified actual Base RGB.
+        choice=plan.get('editing',{}).get('base_colors',{}).get(key)
+        if choice:palettes[key]['base_selection']={k:choice[k] for k in ('candidate','notes','reviewed')}
         parts.append(dict(semantic_id=part['semantic_id'],display_name=part.get('display_name',part['semantic_id']),
             palette_id=key,group_path=part.get('group_path',[]),coloring_notes=part.get('coloring_notes',''),
             base_layer_path=layer_path(pixels[name]),source_bbox=list(pixels[name].bbox)))
@@ -281,7 +286,7 @@ def assigned_labels(plan,arrays,palette,complete=True):
     return labels
 
 
-def paint_preview(job,plan,arrays,palette,complete):
+def paint_preview(job,plan,arrays,palette,complete,write=True):
     labels=assigned_labels(plan,arrays,palette,complete)
     background=plan.get('background_rgb',[255,255,255])
     if not isinstance(background,list) or len(background)!=3 or any(not isinstance(c,int) or not 0<=c<=255 for c in background):
@@ -290,6 +295,7 @@ def paint_preview(job,plan,arrays,palette,complete):
     for i,p in enumerate(plan['parts'],1):
         lut[i]=np.array(background if p['semantic_id']=='background' else palette['palettes'][p['palette_id']]['rgb'])/255
     flat=lut[labels];flat[arrays['ink']]=0
+    if not write:return labels,flat,lut
     save_image(image_u8(flat),job/'flat_preview.png')
     bg=next((i for i,p in enumerate(plan['parts'],1) if p['semantic_id']=='background'),None)
     if bg is not None:
@@ -401,16 +407,26 @@ def lightness(rgb):
 
 
 def build_colored(job,output=None):
+    build_started=perf_counter()
     job,config,palette,plan,arrays=load_job(job)
     if plan.get('classification_source')!='astra_reviewed':raise ValueError('Coloring requires visually reviewed assignments')
     labels,flat,lut=paint_preview(job,plan,arrays,palette,True)
-    lighting=plan.get('lighting');guide=None
+    lighting=plan.get('lighting');guide=None;normal=None
+    if lighting and lighting.get('method')=='normals' and lighting.get('enabled',True) is False:
+        if lighting.get('reviewed') is not True or not str(lighting.get('notes','')).strip():
+            raise ValueError('Review lighting alignment and record notes first')
+        lighting=None
     if lighting:
         if lighting.get('reviewed') is not True or not str(lighting.get('notes','')).strip():raise ValueError('Review lighting alignment and record notes first')
         if digest(lighting['guide_path'])!=lighting['guide_hash'] or digest(job/'lighting_aligned.png')!=lighting['aligned_hash']:
             raise ValueError('Lighting guide changed')
         if digest(job/'flat_preview.png')!=lighting['flat_hash']:raise ValueError('Coloring changed; regenerate/review lighting')
         guide=np.asarray(Image.open(job/'lighting_aligned.png').convert('RGB'),np.float32)/255
+        method=lighting.get('method','guide')
+        if method not in ('guide','normals'):raise ValueError('Unknown lighting method')
+        if method=='normals':
+            from .normal_lighting import load_normal_lighting
+            normal=load_normal_lighting(lighting,arrays['ink'].shape)
     output=Path(output or job/'output.psd').resolve()
     protected=[palette['psd_path'],config['lineart_source']]
     if 'reference_path' in palette:protected.append(palette['reference_path'])
@@ -434,10 +450,17 @@ def build_colored(job,output=None):
     color_model=lighting.get('color_model','neutral') if lighting else 'neutral'
     if color_model not in ('neutral','source_tones'):raise ValueError('Unknown lighting color_model')
     tone_mapping=lighting.get('tone_mapping','absolute') if lighting else 'absolute'
-    if tone_mapping not in ('absolute','source_levels'):raise ValueError('Unknown lighting tone_mapping')
-    weights=np.array([.2126,.7152,.0722]);reach={};mapped=[]
+    if tone_mapping not in ('absolute','source_levels','source_ramp'):raise ValueError('Unknown lighting tone_mapping')
+    if tone_mapping=='source_ramp' and (normal is None or color_model!='source_tones'):
+        raise ValueError('source_ramp requires normals and source_tones')
+    if tone_mapping=='source_levels' and normal is not None:
+        raise ValueError('Normal lighting uses source_ramp, not guide source_levels')
+    weights=np.array([.2126,.7152,.0722]);reach={};mapped=[];normal_mapping={}
     if guide is not None:
         luminance=guide@weights
+        if normal is not None:
+            from .normal_lighting import normal_dot
+            luminance=normal_dot(normal,lighting['light'])
         # Line darkness is excluded before any guide statistics are taken.
         clean=~ndi.binary_dilation(arrays['ink'],iterations=2)
         samples={}
@@ -482,6 +505,17 @@ def build_colored(job,output=None):
                 if dark_capacity>=1/255 else np.zeros(mask.shape,np.float32))
             ha=(np.clip((target_luma-base_luma)/max(light_capacity,1e-6)*strength,0,1)*mask
                 if light_capacity>=1/255 else np.zeros(mask.shape,np.float32))
+            if normal is not None:
+                from .normal_lighting import material_normal_layers
+                # Fill line-adjacent samples from this material only, avoiding
+                # learned grooves at ink and cross-material interpolation.
+                shadow,sa,highlight,ha,diagnostics=material_normal_layers(
+                    normal[tuple(nearest)],lighting['light'],base,tones,sample,lighting,neutral)
+                sa=sa*mask;ha=ha*mask
+                if diagnostics is not None:
+                    normal_mapping[part['palette_id']]=diagnostics
+                    if diagnostics['status']=='mapped':
+                        mapped.append(part['palette_id'])
             add(title+'_Shadow','Shadows',shadow,sa,path,'multiply')
             add(title+'_Highlight','Highlights',highlight,ha,path,'screen')
             expected=expected*(1-sa[...,None]+shadow*sa[...,None])
@@ -505,7 +539,10 @@ def build_colored(job,output=None):
         metrics=dict(mae=float(difference.mean()),max_channel_error=float(difference.max())),
         evaluation_reference='Python coloring target, not the source character pose or AI pixels',
         palette_preserved=True,input_ink_preserved=True,pixel_layers=len(layers),folders=count_groups(layers),
+        build_elapsed_seconds=round(perf_counter()-build_started,3),
+        lighting_method=lighting.get('method','guide') if lighting else 'none',
         lighting_color_model=color_model,tone_mapping=tone_mapping,tone_mapped_palettes=sorted(set(mapped)),tone_reach=reach,
+        normal_mapping=normal_mapping,
         tone_reach_warnings=sorted(k for k,v in reach.items() if not v['reachable']))
     write_json(job/'analysis.json',analysis)
     for name in ('analysis.json','source_palette.json','lineart_binary.png','lineart_rgba.png'):

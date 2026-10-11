@@ -37,6 +37,22 @@
 
 影・光は既定で一定のグレーと画素別透明度。`--lighting cool`または`warm`で照明色を選べる。許容値内の色ぶれを寄せ、残る色差はBaseに応答する相対色補正へ分ける。模様や別素材のアクセントは別パーツへ分離する。意図して固定する固有色だけpartの`detail_mode: pigment`で通常レイヤーへ残す。
 
+## Base色を意味と画像から選ぶ
+
+新しいconfigure-editingは `--base-mode review_candidates` が既定。影の面積が大きい素材で最多色をそのままBaseにしないため、全paletteの候補を実画像で確認して選ぶ。既存設定でbase_modeがないjobは従来の最多色を維持する。互換試験に限り `--base-mode dominant` を明示できる。
+
+```powershell
+.\.venv\Scripts\python.exe -m anime_layer_agent review-base-colors --job work/<name>
+# 全base_candidates_*.pngを開き、各素材の通常色を判断する
+.\.venv\Scripts\python.exe -m anime_layer_agent select-base-color --job work/<name> --palette-id white_fabric --candidate light --notes "白布の通常明部を確認。紫灰の影色を避ける"
+```
+
+候補はdominant（最多色）、midtone（素材内L*40〜60%帯）、light（60〜80%帯、最明部の艶を除く）の3色。線を除いたパーツごとの色を取り、共有paletteではパーツを等重みでまとめる。Pythonは色と候補位置を出すだけで素材の基本色を認定しない。Astraが白布・髪・肌・黒布・固有色の役割を見て選び、理由をnotesへ残す。白布をlightにしても黒布までlightへ揃えない。微小部位・線主体の眉/目などは候補の不確かさも記録する。
+
+全paletteを選ぶまで新規artistのbuild-compactを拒否する。入力画素・線・意味マスク・共有palette構成が変わったら候補と選択は無効になり、再確認が必要。選択はediting.base_colorsにRGB/候補名/理由/ハッシュとして保存し、同素材へ共通Baseを適用。予算や許容値の再設定で選択を消さない。review-editingでも候補sheetを出力する。
+
+Base選択による変化は下塗りで確認する。完成合成は新Baseから影/光/相対色補正へ再分解し、原画の色許容値・読み戻し・枚数上限を維持する。保存PSDの実Baseが正しいことを確認し、新しいPSDと隣接JSONを一組で渡す。JSONには任意base_selection（候補名・理由・reviewed）を記録する。古いPSDや既存第2機能jobのBaseを黙って置換しない。再構築したら必ず全post-reviewをやり直す。
+
 ## 背景の混入を直す
 
 `review-editing --job work/<name>`で、PSD保存前に現在のパーツ一覧・背景検査・設定の提案を生成できる。partial_reviewの計画でも使えるが、PSD構築はastra_reviewedを必要とする。

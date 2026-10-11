@@ -83,7 +83,7 @@ def artist_job(tmp_path):
     write_json(job/'semantic_plan.json', {'classification_source':'astra_reviewed','parts':[
         {'semantic_id':'background','regions':[1]},
         {'semantic_id':'cloth','display_name':'着物','regions':[2],'group_path':['キャラクター','衣装']} ]})
-    configure_editing(job)
+    configure_editing(job,base_mode='dominant')
     return job
 
 
@@ -142,11 +142,11 @@ def test_editing_review_before_build_does_not_certify_or_write_psd(artist_job):
 def test_artist_budget_rejection_preserves_psd_and_lower_bound_is_honest(artist_job):
     result = build_compact(artist_job)
     original = (artist_job/'output.psd').read_bytes()
-    configure_editing(artist_job, layer_range='1-1')
+    configure_editing(artist_job, layer_range='1-1',base_mode='dominant')
     with pytest.raises(ValueError, match='exceeds budget'):
         build_compact(artist_job)
     assert (artist_job/'output.psd').read_bytes() == original
-    configure_editing(artist_job, layer_range='100-200')
+    configure_editing(artist_job, layer_range='100-200',base_mode='dominant')
     result = build_compact(artist_job)
     assert result['passed'] is False
     assert read_json(artist_job/'editing_report.json')['layer_range_met'] is False

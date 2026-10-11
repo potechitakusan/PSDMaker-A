@@ -2,6 +2,8 @@
 
 `coloring_reference.json`（schema 1）は、第1機能のPSDを第2機能の配色参照として持ち運ぶためのファイル。PSDと同じフォルダに保存する。元のworkフォルダやsemantic_plan.jsonは、読み込み時には不要。
 
+新しいartist jobは任意のpalette.base_selectionにcandidate（dominant/midtone/light）、notes（選色の意味と理由）、reviewedを付ける。実PSDのBase RGBが配色の基準であり、この記述だけで意味確認の正しさを保証しない。ローカル候補入力ハッシュや絶対パスはbase_selectionへ含めない。旧JSONにこの項目がなくても読める。
+
 | 項目 | 内容 |
 |---|---|
 | schema / kind | `1` / `coloring_reference` |

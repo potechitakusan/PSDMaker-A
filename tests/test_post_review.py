@@ -62,7 +62,7 @@ def reviewed_job(tmp_path):
     prepare_compact(**demo(tmp_path/'input'),job=job)
     write_json(job/'semantic_plan.json',{'classification_source':'astra_reviewed','parts':[
         {'semantic_id':'background','regions':[1]}, {'semantic_id':'cloth','regions':[2],'group_path':['衣装']} ]})
-    configure_editing(job)
+    configure_editing(job,base_mode='dominant')
     build_compact(job)
     return job
 

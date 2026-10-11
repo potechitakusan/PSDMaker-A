@@ -55,6 +55,7 @@ def parser():
     material.add_argument("--clusters", type=int, default=6)
     editing = commands.add_parser('configure-editing', help='Set artist preferences; auto or explicit values')
     editing.add_argument('--job', required=True)
+    editing.add_argument('--base-mode', choices=['review_candidates','dominant'],default='review_candidates')
     editing.add_argument('--layer-range', default='auto', help='Drawing layers excluding folders: auto or 100-200')
     editing.add_argument('--color-tolerance', default='auto', help='auto or 0..100; paint Delta E76 cap = value / 5')
     editing.add_argument('--lighting', choices=['neutral', 'cool', 'warm'], default='neutral')
@@ -120,6 +121,23 @@ def parser():
     lighting.add_argument('--job', required=True)
     lighting.add_argument('--image', required=True)
     lighting.add_argument('--max-shift', type=int, default=12)
+    normal = commands.add_parser('prepare-normal-lighting', help='Optional signed NPY normals on the fixed lineart grid')
+    normal.add_argument('--job', required=True)
+    normal.add_argument('--normals', required=True)
+    direction=normal.add_mutually_exclusive_group()
+    direction.add_argument('--light', type=float, nargs=3)
+    direction.add_argument('--preset',type=int,choices=range(1,51))
+    commands.add_parser('list-normal-lights',help='List all 50 stable light choices')
+    select_light=commands.add_parser('select-normal-light',help='Choose a light for an existing normal job')
+    select_light.add_argument('--job',required=True)
+    select_light.add_argument('--preset',type=int,choices=range(1,51),default=1)
+    base_review=commands.add_parser('review-base-colors',help='Render dominant/midtone/light Base candidates')
+    base_review.add_argument('--job',required=True)
+    base_select=commands.add_parser('select-base-color',help='Record visually chosen material Base')
+    base_select.add_argument('--job',required=True)
+    base_select.add_argument('--palette-id',required=True)
+    base_select.add_argument('--candidate',choices=['dominant','midtone','light'],required=True)
+    base_select.add_argument('--notes',required=True)
     colored = commands.add_parser('build-colored', help='Build the opt-in coloring PSD; preserve source PSD and input ink')
     colored.add_argument('--job', required=True)
     colored.add_argument('--output')
@@ -134,7 +152,16 @@ def main():
     args = vars(parser().parse_args())
     command = args.pop("command")
     try:
-        if command == 'review-coloring-tones':
+        if command in ('list-normal-lights','select-normal-light'):
+            from . import light_presets
+            function=getattr(light_presets,command.replace('-','_'))
+        elif command in ('review-base-colors','select-base-color'):
+            from . import base_colors
+            function=getattr(base_colors,command.replace('-','_'))
+        elif command == 'prepare-normal-lighting':
+            from .normal_lighting import prepare_normal_lighting
+            function = prepare_normal_lighting
+        elif command == 'review-coloring-tones':
             from .tone_review import review_coloring_tones
             function = review_coloring_tones
         elif command == 'export-coloring-reference':

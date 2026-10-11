@@ -12,6 +12,8 @@ configure-editingはartistプロファイルを設定する。描画枚数の範
 
 同じpalette_idは共通の単色Base。group_pathの階層内にパーツ別Base/Shadow/Highlight/必要な色補正を置く。色統一による塗り変更はCIE76距離で許容値/5以内。既定の線はモノクロ、影・光は一定グレーと画素別透明度。cool/warmの照明も指定できる。新規detail_mode=relativeはBaseに応答するMultiply/Screen色補正、意図した固有色だけpigmentでNormalへ残せる。
 
+新規configure-editingのbase_mode既定はreview_candidates。review-base-colors（review-editingでも生成）で最多色・L*40〜60%帯の中間色・60〜80%帯の通常明部色の3候補をpalette別に表示。線を除いたパーツごとの候補を等重みで共有化する。Astraが画像/素材の意味を確認しselect-base-colorで候補と理由を記録。全paletteの選択・reviewed・RGB・入力/マスク/共有構成ハッシュが一致するまでbuild-compactを拒否する。再設定では選択を保持。旧jobや明示base_mode=dominantは従来動作。選択後も色許容値・再分解・読み戻し・予算と全事後レビューを維持する。選択の証跡はediting_reportと任意coloring_reference.palettes.*.base_selectionへ保存し、実BaseからRGBを検証する。
+
 line_cleanupは補正ガイドに裏付けされない点・塗り跡を塗り側へ戻し、モノクロ化前のRGB合成を保つ。線変更は塗りの許容値とは別に評価する。背景単独画像を必ず確認する。select-color/assign-selection、review-components/component_assignmentsは目視確認した範囲だけ局所修正し、計画をpartial_reviewへ戻す。色だけで背景要素を前景と決めない。
 
 ### 第2機能への引き継ぎ
@@ -36,6 +38,18 @@ build-coloredは各パーツ内のBase/Shadow/Highlightと最上段の透明線�
 
 ## 評価と事後レビュー
 
+### 任意の法線照明試作
+
+第2機能の下塗り済みjobへ `prepare-normal-lighting --job ... --normals ... --light X Y Z` を追加。既存prepare-lighting方式は維持する。入力は固定線画と同じHxWx3の符号付きNPY法線（X右、Y上、Z手前）。可視化RGBは入力にしない。サイズ・有限値・非零ベクトルを検証し正規化する。画像・法線の自動位置合わせは行わず、推定時に同じ画素格子へ戻し、意味・形状のずれは目視確認する。照明選択・法線ハッシュ・光方向はsemantic_plan.lightingへ記録し、reviewedとnotesを必須にする。
+
+build-coloredのnormals分岐はN·Lを0〜1へ制限し、0.65を中立点とする芸術的ランプからMultiply影・Screen光の透明度を作る。既存素材のsource_tones/neutral色を再利用し、各パーツマスクで切り抜く。線の近傍2pxは同素材の内側法線を参照する。Baseと最上段の線は固定。光は拡散的な明部の補助であり、物理的な鏡面反射、落ち影、AOの推定ではない。build_elapsed_secondsに構築・読み戻しまでの実時間を記録する。
+
+法線の任意normal_curveは影/光のgain（0〜4）とgamma（.25〜4）で従来の明暗を調整する。未指定は従来通り。source_tones＋tone_mapping=source_rampは素材別N·Lの9/50/70/87.5/97.25%点を元絵のshadow/midtone/light/bright/peak RGBへ対応させる。節点間隔最低.08、全体幅.08未満/32画素未満/全5色帯なしは従来照明へfallbackしanalysis.normal_mappingへ記録。Baseとの差を画素別RGB/透明度のMultiply/Screen二層へ分解し、混合チャンネルの色変化も再現する。Base・線・マスク・予算は固定、AI画像のRGBは用いない。guide向けsource_levelsは法線で拒否する。元絵と色帯を合わせる処理であり、落ち影・艶・正しい法線・未知作例の品質は保証しない。色帯の適合と実PSD読み戻し・目視所見を分けて報告する。
+
+法線光源は安定した番号1〜50から選ぶ。四隅各9点=36、上下左右の軸各3点=12、中央手前1、法線なし1。既定1番は左上手前(-.65,.65,.55)、各斜め群はXY±.2の周囲8点を加える。軸はXY距離.85/.55/.25、Z=.55。49番は(0,0,1)、50番はBaseと固定線のみ。prepare-normal-lightingの--preset/--lightは排他、方向省略は1番。select-normal-lightは方向/enabledを記録し照明再確認を必須にする。プレビュー画面に50選択の照明比較を追加しPSDと同じ計算式で非同期描画、PSD/計画は変更しない。保存への反映はCLI→再構築→全事後レビュー。非法線jobでは選択を無効にする。
+
+公式Marigold推定はscripts/infer_marigold_normals.pyを独立venvで明示実行する。本体requirementsへTorchを追加せず、既存ComfyUIを変更しない。詳細と制約は[NORMAL_LIGHTING_WORKFLOW.md](NORMAL_LIGHTING_WORKFLOW.md)。試作の実画像は公開作例と同じポーズの独立開発jobとして扱う。
+
 第1機能の原画基準はRGB MAE≤4、SSIM≥0.95、平均CIEDE2000≤4、edge mismatch≤0.03。意図した編集目標からの実PSD読み戻しは別にMAE≤0.5、最大チャンネル差≤3（0〜255）で検証する。第2機能はPythonの着色目標からの読み戻しを同じMAE/最大差で検証し、別ポーズの原画やAI画像との一致を品質点数にしない。
 
 artistとcoloringは数値合格でもpost_review_requiredで止まる。post-reviewは実PSDの全パレットの強い色替え、素材仮色、線/背景単独、暗背景、影・光OFFを生成する。Astraが全比較画像を開き、10項目の所見・status・画像根拠を記入しfinish-reviewで確定する。未記入・古いPSD/計画/根拠・数値評価の不一致は拒否。failはneeds_repair、limitationはcomplete_with_limitations。再構築したら確認もやり直す。
@@ -57,5 +71,7 @@ CLIはstatus.jsonとdocs/jobs/*.mdへ状態を保存する。開始・フェー�
 input/work/output/backup/.tmp、docsのジョブ・ローカル状態は公開対象外。examplesは許可した作例のみ公開し、JPG/PSD/JSONのメタデータと意味記述も点検する。backupは実行・テストの依存にしない。
 
 ## 対象外
+
+Base選択の任意証跡 `base_selection`（候補・理由・reviewed）は、第2機能のsource-job経由でもsource-reference経由でも継承する。公開例の最新参照はexamples/outputのPSDと隣接JSON、対応入力はexamples/reference.jpg、主着色例はcoloring（imagegen/source_levels）、比較例はcoloring_normals（左上手前/source_ramp）。同ポーズの色・照明試験であり、新ポーズの意味分類の再検証とは区別する。通常のREADME・手順は最新作例だけを案内し、旧作例へのリンクを置かない。
 
 隠れたパーツの描き足し、完全な隙間復元、Live2D用パーツ展開、ベクター線、特殊発光・厚塗りの完全分離、実ペイントアプリでの互換性保証は含まない。同じjobに複数の書込CLIを同時実行しない。プレビューは読取り専用なので併用できる。

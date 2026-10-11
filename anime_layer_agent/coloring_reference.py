@@ -65,13 +65,16 @@ def export_coloring_reference(job):
         if palette['rgb'] != rgb:
             raise ValueError(f'Source palette contains different Base colors: {key}')
         palette['source_parts'].append(sid)
+        choice=plan.get('editing',{}).get('base_colors',{}).get(key)
+        if choice:
+            palette['base_selection']={k:choice[k] for k in ('candidate','notes','reviewed')}
         parts.append(dict(semantic_id=sid, display_name=part.get('display_name', sid),
             palette_id=key, group_path=part.get('group_path', []),
             coloring_notes=part.get('coloring_notes', ''), base_layer_path=layer_path(layer),
             source_bbox=list(layer.bbox)))
     if not parts:
         raise ValueError('Source PSD has no foreground Base layers')
-    # Base is the dominant (often shaded) color; the ramp tells a new drawing
+    # Base may be visually selected or legacy dominant; the ramp tells a drawing
     # how bright and saturated the finished material actually looks.
     from .tone_review import original_tones
     tones = original_tones(job, psd, parts) or {}
