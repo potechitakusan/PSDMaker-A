@@ -27,6 +27,19 @@ __pycache__/
 /examples/coloring_normals/*
 !/examples/coloring_normals/output.psd
 !/examples/coloring_normals/preview.jpg
+!/examples/manga/
+/examples/manga/*
+!/examples/manga/output.psd
+!/examples/manga/reference.jpg
+!/examples/manga/preview.png
+!/examples/manga/lineart.png
+!/examples/manga/tone_reference.json
+!/examples/manga_transfer/
+/examples/manga_transfer/*
+!/examples/manga_transfer/output.psd
+!/examples/manga_transfer/preview.png
+!/examples/manga_transfer/lineart.png
+!/examples/manga_transfer/tone_reference.json
 !/examples/legacy/
 /examples/legacy/*
 !/examples/legacy/v1.3/
@@ -47,14 +60,21 @@ __pycache__/
 # User-provided illustrations and line art (never publish by default)
 /input/
 
+# Local copies of third-party reference repositories (ported code is credited in THIRD_PARTY_NOTICES.md)
+/参考/
+
 # Sample-specific semantic plans and generated runtime state
 docs/active_job.json
 docs/jobs/
 docs/PREVIEW.md
 docs/PROGRESS.md
 docs/RESUME.md
+docs/manga_last_settings.json
 
 # Test and tool by-products
 .coverage
 htmlcov/
 *.py[cod]
+
+# Local manga adjustment presets
+/presets/

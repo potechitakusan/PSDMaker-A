@@ -145,6 +145,64 @@ def parser():
     reference.add_argument('--job', required=True)
     tones = commands.add_parser('review-coloring-tones', help='Compare source and colored PSD material lightness/chroma')
     tones.add_argument('--job', required=True)
+    manga = commands.add_parser('prepare-manga', help='Opt-in manga toning: record sizes and the downscaled generation input')
+    manga.add_argument('--reference', required=True)
+    manga.add_argument('--job', required=True)
+    manga.add_argument('--redraw-engine', choices=['imagegen', 'qwen', 'none'], default='imagegen')
+    manga.add_argument('--line-engine', choices=['imagegen', 'qwen', 'provided', 'redraw'])
+    manga.add_argument('--max-side', type=int, default=1536)
+    manga.add_argument('--source-job', help='Reuse reviewed parts of a built first-feature job of the same image')
+    manga.add_argument('--output')
+    comfy = commands.add_parser('run-comfy-manga', help='Run Qwen-Image 2.1 redraw or Manga Lineart on a running ComfyUI')
+    comfy.add_argument('--job', required=True)
+    comfy.add_argument('--task', choices=['redraw', 'lineart', 'qwen_lineart'], default='redraw')
+    comfy.add_argument('--url', default='http://127.0.0.1:8188')
+    comfy.add_argument('--unet')
+    comfy.add_argument('--clip')
+    comfy.add_argument('--vae')
+    comfy.add_argument('--seed', type=int, default=1)
+    comfy.add_argument('--megapixels', type=float, default=1.0, help='Qwen image-edit size in megapixels (default: 1.0)')
+    comfy.add_argument('--cache-device', default='cpu')
+    comfy.add_argument('--wait-seconds', type=int, default=900)
+    comfy.add_argument('--prompt')
+    register = commands.add_parser('register-manga', help='Map generated images to the original grid and list part regions')
+    register.add_argument('--job', required=True)
+    register.add_argument('--redraw')
+    register.add_argument('--lineart')
+    register.add_argument('--fit', choices=['auto', 'stretch', 'contain', 'cover'], default='auto')
+    register.add_argument('--max-shift', type=int, default=12)
+    register.add_argument('--min-area', type=int)
+    register.add_argument('--region-source', choices=['auto', 'lineart', 'redraw', 'source_job'], default='auto')
+    manga_build = commands.add_parser('build-manga', help='Build the manga tone PSD from a reviewed part plan')
+    manga_build.add_argument('--job', required=True)
+    manga_build.add_argument('--output')
+    manga_export = commands.add_parser('export-manga', help='Export with saved adjustment settings, without opening the GUI')
+    manga_export.add_argument('--job', required=True)
+    manga_export.add_argument('--output')
+    manga_export.add_argument('--reuse-last', action='store_true')
+    manga_export.add_argument('--settings', help='Adjustment JSON file')
+    png_export = commands.add_parser('export-manga-png', help='Export the applied tone preview as a full-size PNG')
+    png_export.add_argument('--job', required=True)
+    png_export.add_argument('--output', required=True)
+    png_export.add_argument('--reuse-last', action='store_true')
+    png_export.add_argument('--settings')
+    tone_ref = commands.add_parser('export-tone-reference', help='Export material tone information for feature 2 (tone)')
+    tone_ref.add_argument('--job', required=True)
+    transfer = commands.add_parser('prepare-tone-transfer', help='Feature 2 (tone): apply source tones to a separate lineart')
+    transfer.add_argument('--lineart', required=True)
+    transfer.add_argument('--job', required=True)
+    transfer_source = transfer.add_mutually_exclusive_group(required=True)
+    transfer_source.add_argument('--source-job')
+    transfer_source.add_argument('--source-reference', help='tone_reference.json beside its PSD')
+    transfer.add_argument('--output')
+    transfer.add_argument('--threshold', type=int, default=192)
+    transfer.add_argument('--gap-close', type=int, default=3)
+    transfer.add_argument('--min-area', type=int, default=12)
+    assign_tone = commands.add_parser('assign-tone-region', help='Assign/move one new-lineart region to a material and tone role')
+    assign_tone.add_argument('--job', required=True)
+    assign_tone.add_argument('--region', type=int, required=True)
+    assign_tone.add_argument('--material', required=True)
+    assign_tone.add_argument('--role', choices=['base', 'shadow', 'highlight', 'beta'], default='base')
     return main
 
 
@@ -179,6 +237,18 @@ def main():
         elif command in ('select-color', 'assign-selection', 'review-components'):
             from . import selection
             function = getattr(selection, command.replace('-', '_'))
+        elif command in ('export-manga', 'export-manga-png'):
+            from . import manga_adjust
+            function = getattr(manga_adjust, command.replace('-', '_'))
+        elif command in ('prepare-tone-transfer', 'export-tone-reference', 'assign-tone-region'):
+            from . import tone_transfer
+            function = getattr(tone_transfer, command.replace('-', '_'))
+        elif command in ('prepare-manga', 'run-comfy-manga', 'register-manga', 'build-manga'):
+            from . import manga
+            function = getattr(manga, command.replace('-', '_'))
+        elif command in ('post-review','finish-review') and (Path(args['job']) / 'manga_job.json').exists():
+            from . import manga
+            function = getattr(manga, command.replace('-', '_'))
         elif command in ('post-review','finish-review'):
             from . import post_review
             function = getattr(post_review,command.replace('-','_'))

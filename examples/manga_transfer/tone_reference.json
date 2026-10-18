@@ -1,0 +1,186 @@
+{
+  "schema": "tone_reference_v1",
+  "psd_file": "output.psd",
+  "psd_hash": "813d562deec5391975981f4be7dcb1cfd56f40c7e67f0ca862e2a50f7b410df6",
+  "size": [
+    832,
+    1248
+  ],
+  "tone_settings": {
+    "screen_lines": 200,
+    "white_point": 0.8,
+    "black_point": 0.3,
+    "light_tone": 0.18,
+    "dark_tone": 0.42,
+    "gradation": 1.0,
+    "pen_threshold": 0.3,
+    "white_lines": 0.4,
+    "min_region": 600,
+    "tone_format": "dots",
+    "beta_min_area": 40,
+    "beta_min_ratio": 0.005,
+    "mode": "node",
+    "dpi": null,
+    "lpi": 60.0,
+    "posterize_thresholds": [
+      50,
+      100,
+      150,
+      200
+    ],
+    "posterize_densities": [
+      1.0,
+      0.5,
+      0.3,
+      0.15,
+      0.0
+    ]
+  },
+  "parts": [
+    {
+      "semantic_id": "background",
+      "display_name": "背景",
+      "group_path": [
+        "背景"
+      ],
+      "tone": {
+        "base": 0.0,
+        "shadow": 0.18000000715255737,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "hair",
+      "display_name": "髪",
+      "group_path": [
+        "キャラクター",
+        "顔・髪"
+      ],
+      "tone": {
+        "base": 1.0,
+        "shadow": 1.0,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "skin",
+      "display_name": "肌",
+      "group_path": [
+        "キャラクター",
+        "顔・髪"
+      ],
+      "tone": {
+        "base": 0.0,
+        "shadow": 0.42,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "eyes",
+      "display_name": "瞳・まつげ",
+      "group_path": [
+        "キャラクター",
+        "顔・髪"
+      ],
+      "tone": {
+        "base": 0.41999998688697815,
+        "shadow": 0.42,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "scarf",
+      "display_name": "チェックのマフラー",
+      "group_path": [
+        "キャラクター",
+        "衣装・小物"
+      ],
+      "tone": {
+        "base": 0.0,
+        "shadow": 0.19382712244987488,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "coat",
+      "display_name": "コート",
+      "group_path": [
+        "キャラクター",
+        "衣装・小物"
+      ],
+      "tone": {
+        "base": 1.0,
+        "shadow": 1.0,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "backpack",
+      "display_name": "リュック本体",
+      "group_path": [
+        "キャラクター",
+        "衣装・小物"
+      ],
+      "tone": {
+        "base": 0.41999998688697815,
+        "shadow": 0.42,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "backpack_straps",
+      "display_name": "リュックの肩ひも・持ち手",
+      "group_path": [
+        "キャラクター",
+        "衣装・小物"
+      ],
+      "tone": {
+        "base": 0.0,
+        "shadow": 0.2275649458169937,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    },
+    {
+      "semantic_id": "buttons",
+      "display_name": "ボタン",
+      "group_path": [
+        "キャラクター",
+        "衣装・小物"
+      ],
+      "tone": {
+        "base": 0.18000000715255737,
+        "shadow": 0.42,
+        "highlight": 0.0,
+        "beta": true,
+        "beta_fill": 0.42
+      },
+      "tone_notes": "参照の素材濃度を変更せず、新しい線画の素材と役割だけを割当。背景は1パーツ。"
+    }
+  ],
+  "density_method": "Resolved flat base and median shadow/highlight before screening; no spatial data",
+  "review_note": "Meaning and visual quality require review; this JSON is not a quality certificate."
+}

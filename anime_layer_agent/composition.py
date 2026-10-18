@@ -120,6 +120,17 @@ def export_psd(job, manifest, output):
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     psd = PSDImage.new("RGBA", tuple(manifest["size"]), color=(0, 0, 0, 0))
+    if manifest.get('dpi') is not None:
+        from psd_tools.constants import Resource
+        from psd_tools.psd.image_resources import ImageResource, ResoulutionInfo
+        dpi = float(manifest['dpi'])
+        if not np.isfinite(dpi) or not 72 <= dpi <= 2400:
+            raise ValueError('PSD dpi must be 72..2400')
+        fixed = round(dpi * 65536)
+        psd.image_resources[Resource.RESOLUTION_INFO] = ImageResource(
+            key=Resource.RESOLUTION_INFO, data=ResoulutionInfo(
+                horizontal=fixed, vertical=fixed, horizontal_unit=1, vertical_unit=1,
+                width_unit=1, height_unit=1))
     hierarchy = manifest.get('hierarchy') == 'parts'
     character = psd if hierarchy else Group.new(psd, "Character")
     if not hierarchy:

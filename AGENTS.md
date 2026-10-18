@@ -18,7 +18,7 @@
 
 採否の根拠は`docs/TOKEN_POLICY.md`（方針見直し時のみ参照）。
 
-## 任意の第2機能: 指定線画を着色する
+## 任意の第2機能（カラー版）: 指定線画を着色する
 
 - 利用者が着色対象の線画を指定した場合だけ、`docs/COLORING_WORKFLOW.md`の着色工程を実行する。既存の画像分解から自動的に着色や別ポーズ生成を開始しない。明示された開発試験の模擬線画は別jobで扱い、通常入力と区別して記録する。
 - `prepare-coloring --lineart ... --source-job ... --job ...`で参照PSDのBase色と線画を準備。Pythonの領域一覧を目視し、semantic_planでパレットと意味を割当。座標塗りはfill-region、局所隙間補助はsplit-color-regionを使う。
@@ -27,7 +27,26 @@
 - 照明案は下塗りとsource_appearance.pngの両方を参照。事後確認ではtones比較で髪・肌・白布の明部と色味を確認し、Base一致だけで原画の印象を再現したとしない。
 - coloring_job.jsonがあるjobはbuild-coloredで保存する。参照PSDと指定線画を上書きしない。post-reviewとfinish-reviewによる事後チェックを必須とし、評価はPython着色結果からのPSD読み戻しと意味・見た目の判断を分ける。
 
-## 画像からPSDを作る
+## 任意の第1機能（トーン版）: カラーイラストを漫画トーン化する
+
+- 利用者が漫画化・モノクロ原稿化・トーン化を明示した場合だけ、`docs/MANGA_WORKFLOW.md`を実行する。カラー版の工程から自動起動しない。
+- 開始時に、再描画モデル（imagegen / qwen / none）、線抽出（imagegen / qwen / provided / redraw）、トーン形式（dots / gray）を確認する。既に指定されていれば再質問しない。お任せなら既定値（imagegen・同じ・dots）を記録する。
+- `prepare-manga`で元サイズと生成用縮小画像の倍率を記録する。imagegenは`generation_input.png`と`prompts.json`から別ファイルへ生成する。Qwenは利用者が起動したComfyUIへ`run-comfy-manga`で依頼する。ComfyUIのノード・モデルは変更しない。
+- `register-manga`が倍率換算と局所位置合わせをする。`manga_alignment.png`を開き、生成画像のずれ・描き足し・欠落を確認して記録する。座標の判断は元画像のpxで行う。
+- パーツはカラー原画を見て判断する。`manga_regions_*.png`の全領域を割り当て、意味名と階層を付ける。AIの再描画の明暗だけで素材を決めない。
+- **通常はツール既定値で出力し、Codexによる仕上げ設定の調整を行わない。** tone_settingsはDEFAULT_SETTINGS、各partのtoneは既定（base:auto、shadow:auto、highlight:white、beta:true）を維持する。肌だからwhite、黒服だからblackなどの上書き、網・濃度・閾値の変更、前回値やプリセットの流用も行わない。利用者が明示した値は優先し、Codexの推奨設定の提案・適用は推奨を求められた場合だけ行う。
+- 意味分類・位置合わせ・マスクの誤割当修正と事後レビューは継続する。既定値の見た目に制約があっても所見として記録し、無断で数値を変更しない。
+- `build-manga`→`post-review`→全画像の目視→`finish-review`。線画単独・ベタ単独・ホワイト・パーツ別トーンと網点の1:1画像を必ず確認する。移植コードのMIT表示は`THIRD_PARTY_NOTICES.md`に維持する。
+
+## 任意の第2機能（トーン版）: 別線画へトーンを貼る
+
+- 利用者が指定した線画だけに `docs/TONE_TRANSFER_WORKFLOW.md` を適用する。カラー版とトーン版は第1・第2機能の別形式であり、機能番号を増やさない。
+- `prepare-tone-transfer` に新線画と、参照jobまたはPSDに隣接した `tone_reference.json` を渡す。元ポーズの領域・座標・マスクをコピーしない。
+- 新線画の全領域を目視し、素材とbase/shadow/highlight/betaを割り当てる。Astraは確認後にastra_reviewed、画面で利用者が確認した場合はuser_reviewedとして区別する。
+- 参照から引き継ぐ素材濃度と網設定を維持し、Codexによる見栄えの数値調整は推奨設定を求められた場合だけ行う。新線画への素材・役割の割当は必要な意味判断として実施する。
+- `start_manga_adjust.bat` で領域・素材濃度・網設定を調整できる。PNGはexport-manga-png、PSDはexport-manga/build-manga。元線画と参照PSDを上書きしない。PSDのpost-review→全画像確認→finish-reviewを省略しない。
+
+## 第1機能（カラー版）: 画像からPSDを作る
 
 - **新規制作は `docs/ARTIST_WORKFLOW.md` の編集優先工程を使う。** 最初に描画レイヤー数の範囲（フォルダは別集計）と色統一の許容値0〜100をまとめて受け取る。既指定は再質問せず、お任せ・未指定は画像の意味素材数と色のばらつきから算出して根拠を記録する。
 - 意味計画を作ったら `configure-editing` を実行する。同素材と目視確認した左右パーツはpalette_idを共有し、group_pathで衣装→パーツ内にBase/Shadow/Highlight/色・模様を並べる。既定の線画はモノクロ、影・光はグレー。原画との差とPSD読み戻しの誤差を別々に報告する。
