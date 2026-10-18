@@ -133,7 +133,11 @@ CLIはstatus.jsonとdocs/jobs/*.mdへ状態を保存する。開始・フェー�
 
 input/work/output/backup/.tmp、docsのジョブ・ローカル状態（manga_last_settings.jsonを含む）、presets/mangaは公開対象外。examplesは許可した作例のみ公開し、JPG/PNG/PSD/JSONのメタデータと意味記述も点検する。backupは実行・テストの依存にしない。
 
-トーン版の公開作例はexamples/manga（第1機能）とexamples/manga_transfer（第2機能）に、原寸preview.png・線画単独lineart.png・output.psd・tone_reference.jsonを一組で格納する。第1機能の入力公開コピーはexamples/manga/reference.jpg。指定された海辺のカラー画像からQwenImage2.1再描画・Manga Line Extractionを行い、全体DEFAULT_SETTINGS・各part auto/auto/white/trueで作成。2793×4096、23描画＋15フォルダ、9素材。Qwen補助線画は塗り境界だけに使用し、瞳・マフラー端などを局所修正。第2機能はQwenで作った別ポーズ線画へ素材濃度・網設定を継承し、832×1248、18描画＋16フォルダ、9素材。両例とも200列・dpi未指定、仕上げ数値の調整なし。背景は利用者指定で1パーツにまとめ、白ハイライトと影を別レイヤーへ分離し、合成画素は維持。意味・境界修正と全レビュー、PNG/PSD全画素一致、JSON可搬性、第2機能の線保持を確認。線の粒状混入・残存位置差・4.16px網警告・フリンジ一部と袖の結合などは制約として残す。未知入力や実アプリの品質保証ではない。詳細は[作例説明](../examples/README.md#トーン版)。
+トーン版の公開作例はexamples/manga（第1機能）とexamples/manga_transfer（第2機能）に、原寸preview.png・線画単独lineart.png・output.psd・tone_reference.jsonを一組で格納する。第1機能の入力公開コピーはexamples/manga/reference.jpg。指定された海辺のカラー画像からQwenImage2.1再描画・Manga Line Extractionを行い、初回はDEFAULT_SETTINGS・各part auto/auto/white/trueで作成した。現在の掲載PSDは利用者指定の調整版で、2793×4096、600dpi、26描画＋15フォルダ、9素材。初回から黒境界0.20、gradation 0、線閾値0.35、dpi 600へ変更されており、Codexは追加の数値調整をせずPSDをそのまま採用する。PNG・線画は実PSDから再出力し、JSONのファイル名・ハッシュ・設定・素材濃度を合わせる。Qwen補助線画は塗り境界だけに使用し、瞳・マフラー端などを局所修正した意味計画を維持する。
+
+第2機能の検証用ファイルは、調整前の第1機能から素材濃度・網設定を継承した832×1248、18描画＋16フォルダ、9素材の版を保持する。両例とも画像幅基準200列で、第2機能のdpiは未指定。背景は利用者指定で1パーツにまとめ、白ハイライトと影を別レイヤーへ分離。現在の第1機能には背景ベタはなく、白レイヤーの分離自体は合成画素を変えない。意味・境界と全比較画像、PNG/PSD全画素一致、JSON可搬性を確認する。公開データのEXIF/XMP・作成者・位置情報・ローカルパス・レイヤー名・JSON記述も検査する。線の粒状混入・残存位置差・第2機能の4.16px網警告・フリンジ一部と袖の結合などは制約として残す。未知入力や実アプリの品質保証ではない。詳細は[作例説明](../examples/README.md#トーン版)。
+
+配布には実行コード・requirements・起動BATに加え、AGENTS.mdとREADMEから参照する公開作業手順・参照JSON仕様を含める。トーン版のMANGA_WORKFLOW.md・TONE_TRANSFER_WORKFLOW.md・TONE_REFERENCE.mdも必須。ローカル状態や生成キャッシュは含めず、コミット済みファイルだけを分離した環境でimport・CLI・テスト・文書リンクを確認する。
 
 ルートREADMEのトーン版作例表示は「第1機能の入力カラー画像 → トーン化結果」の2画像とし、カラー原画からモノクロ出力へ変わることを画像で示す。第2機能（トーン版）は出力品質の検証中につき、ルートREADMEから作例画像・成果物への直接リンク・作例紹介を外す。検証用ファイルはexamples/manga_transferに保持する。入力表示はexamples/manga/reference.jpgを使い、カラー版のexamples/reference.jpgとは分ける。examples/READMEはカラー版・トーン版とも「ファイル／内容」の一覧と制作方法・検証結果・制約の説明に統一し、画像は重複掲載せず、第1機能の画像比較をルートREADMEへ案内する。
 

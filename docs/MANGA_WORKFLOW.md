@@ -201,7 +201,7 @@ overviewには次を並べる: カラー原画、元サイズへ戻した再描�
 
 ## 第2機能（トーン版）への引き継ぎ
 
-[公開作例](../examples/README.md#トーン版) にQwenImage2.1の再描画とManga Line Extractionから既定値で作った第1機能、Qwenで生成した別ポーズ線画へ素材濃度を継承した第2機能のPNG・PSD・JSON・線画を収録している。元の制作jobがなくても、作例のPSDとJSONから新しいトーン貼りを準備できる。
+[公開作例](../examples/README.md#トーン版) にQwenImage2.1の再描画とManga Line Extractionから作った第1機能、Qwenで生成した別ポーズ線画へ素材濃度を継承した第2機能のPNG・PSD・JSON・線画を収録している。第1機能の掲載PSDは初回の既定値出力から利用者が調整した版で、Codexによる追加調整はしていない。第2機能は調整前の参照から作った検証用ファイルを保持している。元の制作jobがなくても、現在の作例PSDと対応するJSONから新しいトーン貼りを準備できる。
 
 新しいPSDには `tone_reference.json` を自動出力する。旧jobは `export-tone-reference --job work/<name>` で書き出せる。PSDとJSONを一組で保管する。素材別のベース・影・光・ベタ下の濃度とベタ可否を解決し、意味名・階層・網設定を引き継ぐ。元の領域番号や陰影形状は移植しない。書式と検証範囲は [TONE_REFERENCE.md](TONE_REFERENCE.md)。
 

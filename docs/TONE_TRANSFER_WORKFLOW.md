@@ -16,7 +16,7 @@ start_preview.batの存在を確認し、開始時刻を記録する。通常の
 
 ## 付属作例を参照にする
 
-[公開作例](../examples/README.md#トーン版) のPSDとJSONから、元の制作jobなしで準備できる。
+[公開作例](../examples/README.md#トーン版) のPSDとJSONから、元の制作jobなしで準備できる。現在の第1機能PSDは利用者指定の調整版で、以下のコマンドはその設定を引き継ぐ。第2機能の付属ファイルは調整前の参照から作った検証用のため、現在の設定とは一致しない。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent prepare-tone-transfer --lineart examples/manga_transfer/lineart.png --source-reference examples/manga/tone_reference.json --job work/tone_example --output output/tone_example/output.psd
