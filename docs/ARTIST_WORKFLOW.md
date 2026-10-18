@@ -1,4 +1,4 @@
-# イラストレーター向け工程
+# 第1機能（カラー版）：イラストレーター向け工程
 
 新規制作はこの工程を優先する。既存のcompact jobは、`configure-editing`を実行するまで従来方式で再構築できる。入力の生成・線画の位置合わせ・視覚確認はCOMPACT_WORKFLOWに従う。
 
@@ -110,7 +110,7 @@ Base選択による変化は下塗りで確認する。完成合成は新Baseか
 
 変更後はpartial_reviewに戻し、review-editingで結果を確認してからastra_reviewedへ進める。色選択や通常割当と同様、最終PSDの事後チェックもやり直す。
 
-## 第2機能へ渡すJSON
+## 第2機能（カラー版）へ渡すJSON
 
 artistのbuild-compactは、保存した実PSDから単色BaseのRGBを検証し、PSDの隣とjobへ `coloring_reference.json` を出力する。素材別RGBとsource_parts、各パーツのsemantic_id/display_name/palette_id/group_path、任意のcoloring_notes、実Baseレイヤーの階層パスと元画像bbox、画像サイズ、PSDと意味計画のSHA-256を含む。絶対パス・領域番号・マスクは含めない。仕様は [COLORING_REFERENCE.md](COLORING_REFERENCE.md)。
 

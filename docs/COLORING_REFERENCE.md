@@ -1,6 +1,6 @@
-# 配色・意味情報の引き継ぎ
+# カラー版の配色・意味情報の引き継ぎ
 
-`coloring_reference.json`（schema 1）は、第1機能のPSDを第2機能の配色参照として持ち運ぶためのファイル。PSDと同じフォルダに保存する。元のworkフォルダやsemantic_plan.jsonは、読み込み時には不要。
+`coloring_reference.json`（schema 1）は、第1機能（カラー版）のPSDを第2機能（カラー版）の配色参照として持ち運ぶためのファイル。PSDと同じフォルダに保存する。元のworkフォルダやsemantic_plan.jsonは、読み込み時には不要。トーン版の引き継ぎには別形式の [TONE_REFERENCE.md](TONE_REFERENCE.md) を使う。
 
 新しいartist jobは任意のpalette.base_selectionにcandidate（dominant/midtone/light）、notes（選色の意味と理由）、reviewedを付ける。実PSDのBase RGBが配色の基準であり、この記述だけで意味確認の正しさを保証しない。ローカル候補入力ハッシュや絶対パスはbase_selectionへ含めない。旧JSONにこの項目がなくても読める。
 

@@ -2,15 +2,21 @@
 
 PSD構築と数値評価の後、作業したAstra自身が必ず実施する。以前の「テスト合格」「原画に似ている」「画像を出力した」は、この確認の代わりにならない。
 
-着色機能ではCOLORING_WORKFLOW.mdも参照する。利用者の線画指定または明示された開発用模擬入力の根拠を確認。input_alignmentは入力線画と照明案の補正前後、lineworkは二値化された入力線の保持、paletteは参照PSDのBase一致を確認する。隙間補助による誤閉鎖、白目・耳内側・頬の塗り残し、AI照明のずれを特に確認。readbackはPython着色目標との差であり、別ポーズの参照画像やAI画像との一致点数ではない。
+第2機能（カラー版）では [COLORING_WORKFLOW.md](COLORING_WORKFLOW.md) も参照する。利用者の線画指定または明示された開発用模擬入力の根拠を確認。input_alignmentは入力線画と照明案の補正前後、lineworkは二値化された入力線の保持、paletteは参照PSDのBase一致を確認する。隙間補助による誤閉鎖、白目・耳内側・頬の塗り残し、AI照明のずれを特に確認。readbackはPython着色目標との差であり、別ポーズの参照画像やAI画像との一致点数ではない。
+
+トーン版の両機能は [MANGA_WORKFLOW.md](MANGA_WORKFLOW.md) の10項目（input_alignment、part_masks、tone_values、shadow_highlight、beta_white、linework、screen、hierarchy_budget、readback、delivery）を使う。第2機能では [TONE_TRANSFER_WORKFLOW.md](TONE_TRANSFER_WORKFLOW.md) も参照する。manga_job.jsonがあるjobはCLIがトーン版の項目へ切り替える。下表のカラー版項目を転記しない。
+
+トーン版の通常制作は第1機能のツール既定値、第2機能の参照継承値を維持する。意味・マスクの誤りは修正するが、目視所見を理由に網・閾値・素材濃度を自動調整しない。Codexの推奨設定は利用者から求められた場合だけ提案・適用する。既定値で生じる見た目の制約はそのまま記録する。
 
 ## 実施手順
 
-1. `post-review --job work/<name>`を実行する。保存した実PSDから色替え、下塗り、線、背景、影/光OFFの画像を生成し、`docs/jobs/<name>-post-review.md`に未確認項目を作る。
-2. `post_review/overview.png`、全てのrecolor_sheet、material_masks.png、必要な原寸・局所画像を画像ツールで開く。着色ではtones_overview.pngとtones_swatches.pngも開き、髪・肌・白布の普通の明部を参照完成色と比較する。motifs_lightingのevidenceに両画像を含める。
-3. 下表の10項目を確認し、`post_review_assessment.json`へstatus（pass/limitation/fail）、具体的な所見、実際に確認したevidence相対パスを記入する。曖昧な見た目を自動推定で確認済みにしない。
-4. 修正できる問題は意味計画や局所素材分離を直してbuild-compact。最大3回を目安に局所修正し、再構築後にpost-reviewをやり直す。旧PSDの評価を流用しない。
+1. `post-review --job work/<name>`を実行する。保存した実PSDから工程に対応する比較画像を生成し、`docs/jobs/`に未確認項目を作る。export-mangaが同じPSDのpost-reviewを実行済みなら、その結果を使用できる。
+2. カラー版は `post_review/overview.png`、全てのrecolor_sheet、material_masks.png、必要な原寸・局所画像を画像ツールで開く。着色ではtones_overview.pngとtones_swatches.pngも開き、髪・肌・白布の普通の明部を参照完成色と比較し、motifs_lightingのevidenceに両画像を含める。トーン版はoverview、線・ベタ・ホワイト・パーツ別トーン、影/光/ベースOFF、1:1網点、位置合わせ・パーツ一覧・差分をすべて開く。
+3. 工程に対応する10項目を確認し、`post_review_assessment.json`へstatus（pass/limitation/fail）、具体的な所見、実際に確認したevidence相対パスを記入する。曖昧な見た目を自動推定で確認済みにしない。
+4. 修正できる問題は意味計画や局所素材分離を直し、第1機能（カラー版）はbuild-compact、第2機能（カラー版）はbuild-colored、トーン版はbuild-mangaで再構築する。画面の反映済み調整案を使う場合はexport-manga。最大3回を目安に局所修正し、再構築後にpost-reviewをやり直す。旧PSDの評価を流用しない。
 5. `finish-review --job work/<name>`で記録を確定する。未記入、画像/PSD/計画の変更、根拠なしは拒否される。failは未達、limitationは制約付き完了として利用者へ具体的に伝える。
+
+## カラー版の10項目
 
 | ID | Astraが目で確認する内容 | NG例・対応 |
 |---|---|---|
@@ -27,8 +33,14 @@ PSD構築と数値評価の後、作業したAstra自身が必ず実施する。
 
 ## 自動化する部分とAstraの責任
 
+第2機能（トーン版）は新線画の全領域・素材・役割、二値化線の保持、仮境界の線画への不混入、素材濃度とベタ下、影/光OFF、1:1網点、原寸PNGとPSDを両方出した場合の一致を確認する。source_appearance.pngで参照の完成トーンも確認する。利用者のuser_reviewedとAstraのastra_reviewedを混同しない。別ポーズなので元の画像との位置一致は要求しない。PNGだけを出力した場合も目視確認が必要で、PSDのfinish-reviewを完了した扱いにはしない。
+
 Pythonは画像生成、色替え、配列・マスク・ブレンド計算、ハッシュ一致、枚数、必須項目の記入を検証する。Astraは「何が同じ素材か」「別パーツが変わっていないか」「再塗装に使えるか」を判断する。finish-reviewの成功は人間のペイントアプリでの確認を意味しない。
 
 新しい指摘が出たら、この公開チェックリストに再発防止の観点を追加し、ジョブ固有の所見はdocs/jobsへ残す。比較画像を生成しただけでチェック欄を埋めない。
 
 新しいartistのpalette確認では全base_candidates_*.pngを開き、通常色と影寄り最多色を区別して選択理由を記録する。Base+線で白布/髪が灰暗く沈まないことと、黒布まで一律に明るくならないことを確認。実PSD Base RGB・選択記録・coloring_reference.jsonの一致を照合し、Base変更後の全色替えと再分解の原画差を再確認する。法線光源を保存変更した場合は、プレビュー切替だけを保存PSDの確認として扱わず、選択方向の再構築と全post-reviewを行う。
+
+第1機能（トーン版）では、生成した線画と保存PSDの線画単独を同じ座標・原寸で比較し、再描画由来の塗りの残片や網点が線レイヤーへ混入していないか確認する。線画側の位置合わせが数値合格でも省略しない。パーツ一覧画像の日本語ラベルが読めることと、実PSDの日本語名が正しいことは別々に確認する。
+
+漫画調整画面を使用した場合は、反映時のプレビューと実PSD読み戻しの一致、未反映の値を出力していないこと、モード・dpi・網間隔・濃度の保存値を確認する。第1機能（トーン版）の階調化方式はパーツ別の白黒指定を使わないため、階調閾値と肌・白布を含む各素材の濃度を改めて確認する。第2機能（トーン版）はどちらの網方式でも明示した素材濃度・役割を使うことを確認する。ベタを非表示にしたときの下の濃度も確認し、意図せず紙色へ抜けていないかを見る（ベタ下の濃度0を指定した場合は紙色）。ペイントアプリでの描画一致と、本プログラム内のプレビュー/PSD一致は別評価。

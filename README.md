@@ -52,17 +52,17 @@ Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の�
 
 ## 作例（トーン版）
 
-第1機能（トーン版）の入力はカラー画像です。左は今回指定された海辺の原画の公開用コピーです。QwenImage2.1で再描画し、Manga Line Extractionで線を抽出して、ツールの既定値のままトーン化しました。Codexによる濃度・網・閾値の仕上げ調整は行っていません。
+第1機能（トーン版）の入力はカラー画像です。左は今回指定された海辺の原画の公開用コピーです。QwenImage2.1で再描画し、Manga Line Extractionで線を抽出してトーン化しました。掲載しているのは、初回の既定値による出力から利用者が調整したPSDです。プレビューもそのPSDから再出力しています。Codexによる追加の数値調整は行っていません。
 
 | 第1機能の入力：カラー画像 | 第1機能の出力：トーン化結果 |
 |---|---|
-| ![第1機能に入力するカラー原画](examples/manga/reference.jpg) | ![既定値でのトーン化](examples/manga/preview.png) |
+| ![第1機能に入力するカラー原画](examples/manga/reference.jpg) | ![利用者が調整したトーンPSDのプレビュー](examples/manga/preview.png) |
 
 - [第1機能の入力カラー画像](examples/manga/reference.jpg)
 - 第1機能：[原寸PNG](examples/manga/preview.png) ／ [編集可能PSD](examples/manga/output.psd) ／ [トーン情報JSON](examples/manga/tone_reference.json) ／ [線画PNG](examples/manga/lineart.png)
 - [作例の作り方・検証結果・制約](examples/README.md#トーン版)
 
-第1機能は2793×4096px・23描画レイヤー、9パーツです。背景は1パーツにまとめ、ハイライトと影を別レイヤーにしました。白い部分のレイヤー分離でも合成画像は変わりません。網点列数200などの既定値を維持し、PNGとPSD読み戻しは全画素一致です。線には粒状の跡が残ります。詳しい制約は作例説明を参照してください。
+第1機能は2793×4096px・600dpi・26描画レイヤー、9パーツです。背景は1パーツにまとめ、ハイライトと影を別レイヤーにしました。画像幅基準の網点列数200を使い、PNGとPSD読み戻しは全画素一致です。線には粒状の跡が残ります。設定と詳しい制約は作例説明を参照してください。
 
 ## セットアップ
 

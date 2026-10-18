@@ -1,7 +1,7 @@
 {
   "schema": "tone_reference_v1",
   "psd_file": "output.psd",
-  "psd_hash": "ef879aface536ce3dbc6da33bae2cb1f87a637729ce69d2750fc13780d8ffedb",
+  "psd_hash": "3762a10e9bb93c92e5ca95fa56e5c47e73e1dc18f84837fcf9b4fcb65c524e56",
   "size": [
     2793,
     4096
@@ -9,21 +9,21 @@
   "tone_settings": {
     "screen_lines": 200,
     "white_point": 0.8,
-    "black_point": 0.3,
+    "black_point": 0.2,
     "light_tone": 0.18,
     "dark_tone": 0.42,
-    "gradation": 1.0,
-    "pen_threshold": 0.3,
+    "gradation": 0.0,
+    "pen_threshold": 0.35,
     "white_lines": 0.4,
     "min_region": 600,
     "tone_format": "dots",
     "beta_min_area": 40,
     "beta_min_ratio": 0.005,
     "mode": "node",
-    "dpi": null,
+    "dpi": 600.0,
     "lpi": 60.0,
     "posterize_thresholds": [
-      50,
+      50.0,
       100,
       150,
       200
@@ -50,7 +50,7 @@
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。背景は空・雲・海・波を1パーツにまとめ、影・ハイライトは別レイヤー。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。背景は空・雲・海・波を1パーツにまとめ、影・ハイライトは別レイヤー。"
     },
     {
       "semantic_id": "hair",
@@ -60,13 +60,13 @@
         "顔・髪"
       ],
       "tone": {
-        "base": 1.0,
-        "shadow": 1.0,
+        "base": 0.41999998688697815,
+        "shadow": 0.42,
         "highlight": 0.0,
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "skin",
@@ -82,7 +82,7 @@
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "eyes",
@@ -98,7 +98,7 @@
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "scarf",
@@ -108,13 +108,13 @@
         "衣装・小物"
       ],
       "tone": {
-        "base": 0.0,
-        "shadow": 0.19382712244987488,
+        "base": 0.18000000715255737,
+        "shadow": 0.41999998688697815,
         "highlight": 0.0,
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "coat",
@@ -124,13 +124,13 @@
         "衣装・小物"
       ],
       "tone": {
-        "base": 1.0,
-        "shadow": 1.0,
+        "base": 0.41999998688697815,
+        "shadow": 0.42,
         "highlight": 0.0,
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "backpack",
@@ -146,7 +146,7 @@
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "backpack_straps",
@@ -156,13 +156,13 @@
         "衣装・小物"
       ],
       "tone": {
-        "base": 0.0,
-        "shadow": 0.2275649458169937,
+        "base": 0.18000000715255737,
+        "shadow": 0.41999998688697815,
         "highlight": 0.0,
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     },
     {
       "semantic_id": "buttons",
@@ -178,7 +178,7 @@
         "beta": true,
         "beta_fill": 0.42
       },
-      "tone_notes": "ツール既定値で自動判定。仕上げ数値の上書きなし。"
+      "tone_notes": "素材ごとの指定は自動判定。濃度は掲載PSDの調整済み設定から解決。"
     }
   ],
   "density_method": "Resolved flat base and median shadow/highlight before screening; no spatial data",
