@@ -6,7 +6,7 @@
 
 ## 入力からの操作
 
-線画がまだなければ内蔵の画像生成AI機能で参照画像から作成し、別ファイルへ保存する。参照画像と線画を確認し、サイズ差と局所ずれをprepare-compactで補正する。alignment.jsonと補正前後の画像を実際に確認し、残る差を記録してから意味分類・PSD構築へ進む。元絵は変形しない。
+線画がまだなければ [AGENTS.mdの権限方針](../AGENTS.md#権限と画像生成の利用) に従い、利用可能な画像生成AI機能で参照画像から作成し、別ファイルへ保存する。生成機能が使えない場合は線画の提供が必要。参照画像と線画を確認し、サイズ差と局所ずれをprepare-compactで補正する。alignment.jsonと補正前後の画像を実際に確認し、残る差を記録してから意味分類・PSD構築へ進む。元絵は変形しない。
 
 作業開始時刻、フェーズ時刻、完了時刻と経過時間（秒数および何分何秒）をjobのtiming.jsonへ記録する。メッセージ受信時刻が取得できない場合、最初の作業時刻を起点として明示する。
 
@@ -59,7 +59,7 @@ artistのPSDはパーツ別階層と最上段の線画。日本語パーツ名�
 
 `semantic_review_01.png` で各パーツの独立性、`editability_review.png` で影OFF・光OFF・線OFF・下塗りだけの状態を確認する。合成スコアが高いだけでは意味分離の正しさを証明しないため、両方を確認する。
 
-局所修正時は対応するsemantic_planの割当/素材条件のみ変更してbuild-compact。位置補正済みのcompact_arraysは再利用できる。従来のanalyze/build/apply-repairはschema 1用の基礎工程として残している。
+局所修正時は対応するsemantic_planの割当/素材条件のみ変更してbuild-compact。位置補正済みのcompact_arraysは再利用できる。build-compactは数値評価も実行するため、上のevaluateは保存済みPSDを再評価する場合のコマンド。構築時のlayer_plan.json（schema 2）は評価用の出力で、編集対象にしない。旧方式のanalyze/build/repair/apply-repairはschema 1用で、このjobへ使わない。
 
 ## 実用上の範囲
 

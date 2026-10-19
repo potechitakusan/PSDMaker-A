@@ -18,7 +18,7 @@ line_cleanupは補正ガイドに裏付けされない点・塗り跡を塗り�
 
 ### 第2機能（カラー版）への引き継ぎ
 
-artistのbuild-compactは `coloring_reference.json` をPSD隣とjobに自動保存する。既存jobはexport-coloring-referenceで追加できる。実PSDから単色Base RGB、素材IDと対応パーツ、PSD内Base階層・bboxを記録し、意味計画からdisplay_name/group_path/任意のcoloring_notesを引き継ぐ。画像サイズ・PSDと計画のSHA-256を含む。元jobの絶対パス・領域番号・マスクは含めない。compact jobから書き出す場合、各パレットに任意の`tones`を付ける。元絵の線を除いた下塗り（underlying、回収線の周辺1pxを除外）をBaseマスク内で測った明度3〜15/40〜60/60〜80/80〜95/95〜99.5%帯（shadow/midtone/light/bright/peak）のRGB・L*・C*。Baseは面積最大の色で陰寄りになり得るため、完成時の明暗幅を数値だけで引き継ぐ。
+artistのbuild-compactは `coloring_reference.json` をPSD隣とjobに自動保存する。既存jobはexport-coloring-referenceで追加できる。実PSDから単色Base RGB、素材IDと対応パーツ、PSD内Base階層・bboxを記録し、意味計画からdisplay_name/group_path/任意のcoloring_notesを引き継ぐ。画像サイズ・PSDと計画のSHA-256を含む。元jobの絶対パス・領域番号・マスクは含めない。compact jobから書き出す場合、各パレットに任意の`tones`を付ける。元絵の線を除いた下塗り（underlying、回収線の周辺1pxを除外）をBaseマスク内で測った明度3〜15/40〜60/60〜80/80〜95/95〜99.5%帯（shadow/midtone/light/bright/peak）のRGB・L*・C*。最多色をBaseに選んだ場合は陰寄りになり得るため、選択したBase色とは別に完成時の明暗幅を数値で引き継ぐ。
 
 PSDとJSONだけで第2機能の参照として使える。読込時にPSDハッシュ・サイズ・実Base色とパーツ対応を検証する。曖昧なBase名、非単色Base、共有ID内の色不一致を拒否する。書式と制約は [COLORING_REFERENCE.md](COLORING_REFERENCE.md)。JSONの意味記述と事後レビューの正しさはハッシュでは保証しない。
 
@@ -137,18 +137,20 @@ CLIはstatus.jsonとdocs/jobs/*.mdへ状態を保存する。開始・フェー�
 
 input/work/output/backup/.tmp、docsのジョブ・ローカル状態（manga_last_settings.jsonを含む）、presets/mangaは公開対象外。examplesは許可した作例のみ公開し、JPG/PNG/PSD/JSONのメタデータと意味記述も点検する。backupは実行・テストの依存にしない。
 
-トーン版の公開作例はexamples/manga（第1機能）とexamples/manga_transfer（第2機能）に、原寸preview.png・線画単独lineart.png・output.psd・tone_reference.jsonを一組で格納する。第1機能の入力公開コピーはexamples/manga/reference.jpg。指定された海辺のカラー画像からQwenImage2.1再描画・Manga Line Extractionを行い、初回はDEFAULT_SETTINGS・各part auto/auto/white/trueで作成した。現在の掲載PSDは利用者指定の調整版で、2793×4096、600dpi、26描画＋15フォルダ、9素材。初回から黒境界0.20、gradation 0、線閾値0.35、dpi 600へ変更されており、Codexは追加の数値調整をせずPSDをそのまま採用する。PNG・線画は実PSDから再出力し、JSONのファイル名・ハッシュ・設定・素材濃度を合わせる。Qwen補助線画は塗り境界だけに使用し、瞳・マフラー端などを局所修正した意味計画を維持する。
+## 公開文書と作例
 
-第2機能の検証用ファイルは、調整前の第1機能から素材濃度・網設定を継承した832×1248、18描画＋16フォルダ、9素材の版を保持する。両例とも画像幅基準200列で、第2機能のdpiは未指定。背景は利用者指定で1パーツにまとめ、白ハイライトと影を別レイヤーへ分離。現在の第1機能には背景ベタはなく、白レイヤーの分離自体は合成画素を変えない。意味・境界と全比較画像、PNG/PSD全画素一致、JSON可搬性を確認する。公開データのEXIF/XMP・作成者・位置情報・ローカルパス・レイヤー名・JSON記述も検査する。線の粒状混入・残存位置差・第2機能の4.16px網警告・フリンジ一部と袖の結合などは制約として残す。未知入力や実アプリの品質保証ではない。詳細は[作例説明](../examples/README.md#トーン版)。
+READMEは概要・用途別の入力と出力・代表作例・セットアップ・依頼例・制約・詳細資料・ライセンスの順で案内する。作例ごとの設定値・寸法・レイヤー数・検証数値と再現条件は [作例ガイド](../examples/README.md) にまとめる。公開例の制約や実アプリ未検証の記載は維持する。
 
-追加の第1機能作例はexamples/manga_imagegen_defaultとexamples/manga_imagegen_adjustedへ格納し、READMEでは既存Qwen作例の下へ並べる。同じ原画の縮小コピーとimagegen線画・再描画・背景透過版を使い、Qwen成果物やマスクは使わない。1036×1519、25描画＋17フォルダ、9素材、背景1パーツ。既定値版はDEFAULT_SETTINGSと全part auto/auto/white/true。利用者の依頼によるCodex調整版は黒境界0.16、gradation0、線閾値0.40、白抜き0.20、網160列、dpi600、コート/背景のbeta:falseだけを変更する。各PSD・原寸PNG・線単独・隣接JSONを保存し、共通の生成素材3点も既定値版フォルダへ収録する。両版ともPNG/PSD全画素一致・全画像レビュー・JSON読込を確認済み。線の粒状跡・二重線・輪郭差・未実施の実アプリ確認を制約として記録する。既存作例の画像・PSD・JSONを変更しない。
+カラー版の参照はexamples/outputのPSDと隣接JSON、対応入力はexamples/reference.jpg。別ポーズの主着色例はcoloring（imagegen/source_levels）、比較例はcoloring_normals（左上手前/source_ramp）。Base選択の任意証跡base_selectionは参照job経由でも参照JSON経由でも継承する。別ポーズ線画は作例用に生成したもので、通常の第2機能には線画の自動生成を含めない。新線画で領域を確認し、元のマスクや座標を移植しない。通常のREADMEと手順はこれらの作例へ案内し、旧作例へのリンクを置かない。
 
-配布には実行コード・requirements・起動BATに加え、AGENTS.mdとREADMEから参照する公開作業手順・参照JSON仕様を含める。トーン版のMANGA_WORKFLOW.md・TONE_TRANSFER_WORKFLOW.md・TONE_REFERENCE.mdも必須。ローカル状態や生成キャッシュは含めず、コミット済みファイルだけを分離した環境でimport・CLI・テスト・文書リンクを確認する。
+トーン版はexamples/manga（Qwenによる第1機能）とexamples/manga_transfer（第2機能）に、原寸preview.png・線画単独lineart.png・output.psd・tone_reference.jsonを格納する。第1機能の入力はexamples/manga/reference.jpg。第1機能は調整済みPSD、第2機能は調整前の参照から作った検証用PSDで、参照設定は一致しない。現在の第1機能のPSDとJSONは新しいトーン貼りに使えるが、掲載中の転写結果の再現を保証しない。両例とも背景は1パーツで、影と白ハイライトを独立させている。
 
-ルートREADMEのトーン版作例表示は「第1機能の入力カラー画像 → トーン化結果」の2画像とし、カラー原画からモノクロ出力へ変わることを画像で示す。第2機能（トーン版）は出力品質の検証中につき、ルートREADMEから作例画像・成果物への直接リンク・作例紹介を外す。検証用ファイルはexamples/manga_transferに保持する。入力表示はexamples/manga/reference.jpgを使い、カラー版のexamples/reference.jpgとは分ける。examples/READMEはカラー版・トーン版とも「ファイル／内容」の一覧と制作方法・検証結果・制約の説明に統一し、画像は重複掲載せず、第1機能の画像比較をルートREADMEへ案内する。
+examples/manga_imagegen_defaultとexamples/manga_imagegen_adjustedは、同じ原画の縮小画像とimagegenによる線画・再描画・背景透過版から作った比較例。既定値版とCodex調整版を別PSD・別JSONで保存する。共通の生成素材は既定値版フォルダへ収録する。Qwen作例はimagegenによる背景透過工程を使っていない作例であり、新規制作の標準工程とは区別する。作例の調整値を通常制作の既定値へ流用しない。
+
+ルートREADMEではQwen作例の入力カラー画像とトーン化結果を並べ、その下にimagegenの既定値版・調整版を並べる。第2機能（トーン版）は検証中として機能と手順を案内し、作例画像・成果物への直接リンクは作例ガイドに置く。作例ガイドのファイル一覧は各成果物へリンクし、画像比較はルートREADMEへ案内する。
+
+配布には実行コード・requirements・起動BATに加え、AGENTS.mdとREADMEから参照する公開作業手順・参照JSON仕様を含める。トーン版のMANGA_WORKFLOW.md・TONE_TRANSFER_WORKFLOW.md・TONE_REFERENCE.mdも必要。ローカル状態や生成キャッシュは含めない。配布の動作検証では、コミット済みファイルだけを分離した環境でimport・CLI・テスト・文書リンクを確認する。公開作例はPSD・画像・JSONの対応とメタデータを確認し、画像・PSD・JSONの変更時は読み戻しと全事後レビューを行う。文書のみの変更では、実装との整合性・文書リンク・コマンド例と成果物の不変を確認する。
 
 ## 対象外
-
-Base選択の任意証跡 `base_selection`（候補・理由・reviewed）は、第2機能（カラー版）のsource-job経由でもsource-reference経由でも継承する。公開例の参照はexamples/outputのPSDと隣接JSON、対応入力はexamples/reference.jpg、別ポーズの主着色例はcoloring（imagegen/source_levels）、同じ別ポーズの比較例はcoloring_normals（左上手前/source_ramp）。線画は作例作成に限りimagegenで生成し、通常は利用者が提供する。新線画の領域を新規分類し、参照のマスク/座標を移植しない。通常のREADME・手順は最新作例だけを案内し、旧作例へのリンクを置かない。
 
 隠れたパーツの描き足し、完全な隙間復元、Live2D用パーツ展開、ベクター線、特殊発光・厚塗りの完全分離、実ペイントアプリでの互換性保証は含まない。同じjobに複数の書込CLIを同時実行しない。プレビューは読取り専用なので併用できる。

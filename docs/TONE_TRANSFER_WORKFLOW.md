@@ -2,6 +2,8 @@
 
 第1機能（トーン版）で決めた素材別の濃度・ベタ・ホワイトと網設定を、利用者が指定した別線画へ引き継ぐ。新しい線画を変形せず、参照の領域番号・位置・マスクを移植しない。カラー版の第2機能は [COLORING_WORKFLOW.md](COLORING_WORKFLOW.md) を使う。
 
+出力品質は検証中。公開作例の線や境界にも制約があるため、出力後の目視確認と利用先のアプリでの確認が必要。
+
 ## 準備
 
 start_preview.batの存在を確認し、開始時刻を記録する。通常の制作では利用者指定の線画が必須。実装試験だけは人工fixtureを別jobで使い、その制約を記録する。
@@ -16,7 +18,7 @@ start_preview.batの存在を確認し、開始時刻を記録する。通常の
 
 ## 付属作例を参照にする
 
-[公開作例](../examples/README.md#トーン版) のPSDとJSONから、元の制作jobなしで準備できる。現在の第1機能PSDは利用者指定の調整版で、以下のコマンドはその設定を引き継ぐ。第2機能の付属ファイルは調整前の参照から作った検証用のため、現在の設定とは一致しない。
+[公開作例](../examples/README.md#トーン版) のPSDとJSONから、元の制作jobなしで準備できる。`examples/manga`の第1機能PSDは調整済み設定で、以下のコマンドはその設定を引き継ぐ。`examples/manga_transfer`の第2機能作例は調整前の参照から作った検証用であり、このコマンドから同じ転写結果を再現することはできない。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent prepare-tone-transfer --lineart examples/manga_transfer/lineart.png --source-reference examples/manga/tone_reference.json --job work/tone_example --output output/tone_example/output.psd

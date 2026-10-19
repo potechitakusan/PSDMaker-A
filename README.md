@@ -1,239 +1,172 @@
 # PsdMaker
 
-イラストを、色・影・線を編集しやすいPSDにするCodex Agent＋ローカルPythonツールです。完成イラストを編集可能なPSDにする「第1機能」と、その素材情報を別の線画へ引き継ぐ「第2機能」があり、それぞれカラー版とトーン版を使えます。
+完成イラストを、色・影・線を編集しやすいレイヤーに分けたPSDへ変換する、CodexとローカルPythonのツールです。作成した素材情報を別の線画の着色やトーン貼りにも使えます。
 
-Codex Astraが画像を見て髪・肌・衣装・背景などの意味を判断し、Pythonが位置合わせ、領域抽出、マスク・色計算、PSD保存、読み戻し評価を担当します。
+Codex Astraが画像を見て髪・肌・衣装・背景などを判断し、Pythonが位置合わせ、領域抽出、色・マスクの計算、PSD保存と読み戻しを行います。
 
-作例を見る： [カラー版](#作例カラー版) ／ [トーン版（入力カラー画像・トーン化）](#作例トーン版)
+## できること
 
-## 第1・第2機能とカラー版・トーン版
-
-| 機能 | できること | 入力 | 出力 |
+| 目的 | 入力 | 必要な参照ファイル | 主な出力 |
 |---|---|---|---|
-| 第1機能（カラー版）：イラストを編集しやすいPSDにする | 1枚の完成イラストを、髪・肌・服・線・背景などを編集しやすいレイヤーに分けたPSDにします。 | 完成イラスト。できれば同じ構図の線画も使います。 | レイヤー分けしたPSDと、次の着色に使える色情報 |
-| 第2機能（カラー版）：別の線画を同じ配色で着色する | 第1機能で作った色情報を使い、別ポーズなどの線画を同じキャラクターらしい色で着色したPSDにします。 | 着色したい線画＋第1機能で作ったPSDと色情報 | レイヤー分けした着色済みPSD。必要なら影・ハイライトも追加できます。 |
-| 第1機能（トーン版）：カラーイラストを漫画原稿風にトーン化する | 髪・肌・服などのパーツごとに、白・トーン・ベタを決めてモノクロ漫画の原稿にします。 | カラーイラスト（線画は任意） | 線画・ベタ・ホワイト・パーツ別トーンに分けたPSDとtone_reference.json。原寸PNGも出力できます。 |
-| 第2機能（トーン版）：別線画にトーンを貼る（検証中） | 第1機能（トーン版）の素材別濃度を別ポーズなどの線画へ引き継ぎます。 | 新しい線画＋参照job、またはPSDとtone_reference.json | 原寸PNGとレイヤー分けしたPSD。アジャスト画面で領域・濃度・網を調整できます。 |
+| 完成イラストを編集可能なPSDに分解（第1機能・カラー） | 完成イラスト＋同じ構図の線画。線画がなければ画像生成を依頼可能 | なし | レイヤー分けしたPSD＋`coloring_reference.json` |
+| 別の線画を参照色で着色（第2機能・カラー） | 着色したい線画 | 第1機能のPSD＋隣接する`coloring_reference.json`、またはPSDを参照できる作業フォルダ | 着色済みPSD。下塗りだけ、または影・ハイライト付き |
+| カラーイラストを漫画トーン化（第1機能・トーン） | カラーイラスト。線画は任意 | なし | 線画・ベタ・ホワイト・パーツ別トーンのPSD＋`tone_reference.json`。原寸PNGも出力可能 |
+| 別の線画へトーンを引き継ぐ（第2機能・トーン：**検証中**） | トーンを貼りたい線画 | トーン版のPSD＋隣接する`tone_reference.json`、またはPSDを参照できる作業フォルダ | 素材別のトーンを貼ったPSD・原寸PNG |
 
-第2機能は着色・トーン貼りをする線画を指定したとき、第1機能（トーン版）は漫画化を依頼したときだけ動きます。別ポーズの線画を自動で作ったり、頼んでいない着色を始めたりはしません。
+作業フォルダ（job）は、入力・領域・意味計画・再開用データをまとめたフォルダです。第2機能では新しい線画の領域を改めて確認し、素材を割り当てます。元のポーズやマスクをコピーする処理ではありません。第2機能が別ポーズの線画を自動生成することもありません。
 
-PSDの中では、たとえば「服 → 袖 → ベース色・影・ハイライト」のようにレイヤーを整理します。レイヤーはPhotoshopなどで自由に編集できますが、同じ色のレイヤーを変えても他のレイヤーが自動で連動するわけではありません。
-
-Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の生成AIモデルは検証していません。
-動作検証は、長辺1280px（または画素数1Mpx）程度のイラストや線画をインプットとして実施しています。大きい画像の場合は時間がかかったり、トークン消費量が飛躍的に増大する可能性があります。
-
-本機能の使い方については、git cloneしてCodexに「このフォルダで何ができる？」のように聞いてみるのが手取り早いかと思います。
-
-## 重要な注意
-
-- **第三者のイラストや、権利・外部AI利用の許諾が不明な画像は入力しないでください。** 入力できるのは、利用者が権利を持つか、権利者から外部AIへの送信・解析・再構成・PSD出力に必要な許諾を得た画像だけです。公開画像、依頼で預かった原稿、二次創作、版権キャラクター、スクリーンショット、人物写真、機密情報なども、入力してよいとは限りません。
-- **Codexの利用を前提とします。** 画像と作業指示は、利用中のCodexおよび必要に応じた画像生成機能の提供事業者へ送信されます。国外を含むサーバへの送信、保存、安全確認、人による確認、モデル改善・学習等の扱いが生じる可能性は、利用中のプラン・設定・規約・仕様に依存します。作者はそれらを管理できず、送信後の完全削除も保証できません。機密性または権利関係に懸念のある画像は使用しないでください。
-- **出力品質・用途適合性は保証しません。** パーツの欠落や混入、境界・細線・色・透過の不正確さ、PSD編集時の互換性問題などが起こり得ます。公開、納品、印刷その他の利用前に、必ず利用者自身で確認・修正してください。
+カラーPSDは「衣装 → 袖 → ベース色・影・ハイライト」のように整理されます。同じ素材の色を揃えて出力しますが、PSD編集時に他のレイヤーの色まで自動で連動するわけではありません。
 
 ## 作例（カラー版）
 
-左の画像のような、レイヤー分けされていない完成イラストを第1機能へ渡すと、髪・服・肌・線などを編集しやすく分けたPSDを作れます。
+完成イラストから作ったPSDの配色情報を使い、別ポーズの線画を着色した例です。影・ハイライトにはimagegenによる照明ガイドを使っています。
 
-そのPSDと一緒に出力される色情報を保存しておけば、第2機能で指定した線画を着色できます。中央は今回の着色用線画、右はBase色を引き継いで影・ハイライトを付けた最新の着色PSDです。
-
-| 第1機能の入力 | 第2機能の線画 | 第2機能の着色結果 |
+| 完成イラスト（第1機能の入力） | 別ポーズの線画（第2機能の入力） | 着色結果（第2機能の出力） |
 |---|---|---|
 | ![入力イラスト](examples/reference.jpg) | ![着色用線画](examples/coloring/lineart.jpg) | ![着色結果](examples/coloring/preview.jpg) |
 
-- [第1機能の編集可能PSD](examples/output/output.psd) ／ [配色・意味情報JSON](examples/output/coloring_reference.json)
-- [第2機能の線画JPG](examples/coloring/lineart.jpg) ／ [着色PSD](examples/coloring/output.psd)
-- [第1機能の完成プレビュー](examples/output/preview.jpg)
-- [法線マップ方式の着色PSD](examples/coloring_normals/output.psd) ／ [プレビュー](examples/coloring_normals/preview.jpg)
-- [作例の仕様・検証結果・制約](examples/README.md)
+- 分解結果：[編集可能PSD](examples/output/output.psd) ／ [配色情報JSON](examples/output/coloring_reference.json) ／ [プレビュー](examples/output/preview.jpg)
+- 着色結果：[PSD](examples/coloring/output.psd) ／ [入力線画](examples/coloring/lineart.jpg)
+- [作例ガイド：方式・再現条件・法線照明との比較・制約](examples/README.md#カラー版)
 
-第2機能の作例は、手を振る参照イラストとは異なる「両手でうさぎを抱えるポーズ」の線画を、`examples/output` のPSDとJSONから引き継いだBase色で着色したものです。新しい線画の領域を確認して素材を割り当て、通常の第2機能の手順でPSDを作成しました。主例はCodex組込みimagegenによる照明案を使い、法線マップ方式も同じ別ポーズの比較例として用意しています。
-
-**通常は利用者が着色したい線画を用意します。今回の線画は、機能を説明する作例の作成用としてimagegenで生成したものです。線画の自動生成は通常の第2機能には含まれません。** JPGのEXIF/XMP・コメント・生成情報は除去しています。細い線の途切れや照明の細部ずれが残り、制作実務にそのまま使える品質を保証するものではありません。
+線画は作例用にimagegenで生成しました。通常の第2機能では利用者が線画を用意します。細線の途切れや照明の細部ずれが残っています。
 
 ## 作例（トーン版）
 
-第1機能（トーン版）の入力はカラー画像です。左は今回指定された海辺の原画の公開用コピーです。QwenImage2.1で再描画し、Manga Line Extractionで線を抽出してトーン化しました。掲載しているのは、初回の既定値による出力から利用者が調整したPSDです。プレビューもそのPSDから再出力しています。Codexによる追加の数値調整は行っていません。
+カラー原画をQwen-Image 2.1 Turboで再描画し、Manga Line Extractionで線を抽出した例です。掲載PSDはトーン設定を調整した版です。
 
-| 第1機能の入力：カラー画像 | 第1機能の出力：トーン化結果 |
+| カラーイラスト（第1機能の入力） | トーン化結果（第1機能の出力） |
 |---|---|
-| ![第1機能に入力するカラー原画](examples/manga/reference.jpg) | ![利用者が調整したトーンPSDのプレビュー](examples/manga/preview.png) |
+| ![トーン化するカラー原画](examples/manga/reference.jpg) | ![トーン設定を調整したPSDのプレビュー](examples/manga/preview.png) |
 
-- [第1機能の入力カラー画像](examples/manga/reference.jpg)
-- 第1機能：[原寸PNG](examples/manga/preview.png) ／ [編集可能PSD](examples/manga/output.psd) ／ [トーン情報JSON](examples/manga/tone_reference.json) ／ [線画PNG](examples/manga/lineart.png)
-- [作例の作り方・検証結果・制約](examples/README.md#トーン版)
-
-第1機能は2793×4096px・600dpi・26描画レイヤー、9パーツです。背景は1パーツにまとめ、ハイライトと影を別レイヤーにしました。画像幅基準の網点列数200を使い、PNGとPSD読み戻しは全画素一致です。線には粒状の跡が残ります。設定と詳しい制約は作例説明を参照してください。
+[原寸PNG](examples/manga/preview.png) ／ [編集可能PSD](examples/manga/output.psd) ／ [トーン情報JSON](examples/manga/tone_reference.json) ／ [線画PNG](examples/manga/lineart.png)
 
 ### imagegenのみの作例
 
-同じカラー原画から、線画・モノクロの再描画ガイド・背景を削除した透過画像をimagegenで作りました。透過画像のalphaを使って被写体と背景を分け、原画を見てパーツを新しく割り当てています。この例ではQwenの生成画像・抽出線・マスクを使っていません。
+同じ原画の縮小画像から、線画・再描画ガイド・背景透過画像をimagegenで生成した比較例です。調整版ではコートと背景のベタをトーンへ変え、コートのしわを見やすくしています。
 
-| ツールの既定値 | Codexが閾値などを調整 |
+| ツールの既定値 | Codexによる調整例 |
 |---|---|
-| ![imagegen・既定値版](examples/manga_imagegen_default/preview.png) | ![imagegen・Codex調整版](examples/manga_imagegen_adjusted/preview.png) |
+| ![imagegen・既定値版](examples/manga_imagegen_default/preview.png) | ![imagegen・調整版](examples/manga_imagegen_adjusted/preview.png) |
 
-- 既定値版：[PNG](examples/manga_imagegen_default/preview.png) ／ [PSD](examples/manga_imagegen_default/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_default/tone_reference.json) ／ [PSDの線画](examples/manga_imagegen_default/lineart.png)
-- 調整版：[PNG](examples/manga_imagegen_adjusted/preview.png) ／ [PSD](examples/manga_imagegen_adjusted/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_adjusted/tone_reference.json) ／ [PSDの線画](examples/manga_imagegen_adjusted/lineart.png)
-- 共通の生成素材：[入力線画](examples/manga_imagegen_default/input_lineart.png) ／ [再描画ガイド](examples/manga_imagegen_default/redraw.png) ／ [背景削除版](examples/manga_imagegen_default/foreground.png)
+- 既定値版：[PNG](examples/manga_imagegen_default/preview.png) ／ [PSD](examples/manga_imagegen_default/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_default/tone_reference.json)
+- 調整版：[PNG](examples/manga_imagegen_adjusted/preview.png) ／ [PSD](examples/manga_imagegen_adjusted/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_adjusted/tone_reference.json)
+- [作例ガイド：生成素材・設定・検証結果・制約](examples/README.md#トーン版)
 
-拡大せず1036×1519pxで作成し、各25描画レイヤー＋17フォルダ、9パーツです。背景は1パーツで、影と白ハイライトは独立しています。既定値版は数値と各パーツのトーン指定を変更していません。依頼に基づく調整版はコートと背景のベタをトーンへ変え、コートのしわが見えるようにしました。
+通常の制作では既定値を使い、Codexによる数値調整は推奨設定を依頼した場合だけ行います。Qwen作例とimagegen作例は出力サイズや設定が異なるため、同条件のモデル性能比較ではありません。線の粒状跡や生成時の形状差は残ります。
 
-PSDの線画は入力線画に再描画由来の線を加えたものです。変更した数値と検証結果は[imagegenのみの作例](examples/README.md#imagegenのみの作例)を参照してください。
+## 動作環境とセットアップ
 
-## セットアップ
+- Windows、Git、Python 3.12以上。`python`コマンドが使え、プレビュー用のTkinterを含む環境が必要です。
+- このフォルダを読み書きでき、画像を確認できるCodex環境。モデルは利用者のCodex画面で選択します。他のAIエージェントでの動作は未検証です。
+- 初回の依存パッケージ取得に必要なインターネット接続。画像生成を使う工程には、その機能を利用できる環境も必要です。
 
-- Python 3.12以上（プレビューにはTkinterが必要）
-- Windows環境（付属BATを使う場合）
-- 初回の依存インストールに必要なインターネット接続
-- このフォルダを読み書きでき、画像を確認できるCodex環境
-
-リポジトリ直下で実行します。
+PowerShellで取得・セットアップします。
 
 ```powershell
+git clone https://github.com/potechitakusan/PSDMaker-A.git
+cd PSDMaker-A
 .\setup.bat
 ```
 
-依存パッケージはプロジェクト内の `.venv` に入ります。ローカルCLIはOpenAI APIキーを要求しません。モデルは利用者のCodex画面で選択します。Codexや任意の画像生成機能の利用条件・料金は利用中のサービスを確認してください。
+`setup.bat`は`python scripts/bootstrap.py`を実行し、プロジェクト内の`.venv`へ依存パッケージを入れます。以降のPython CLIは`.venv/Scripts/python.exe`を使います。ローカルCLIはOpenAI APIキーを要求しません。Codexや画像生成サービスの利用条件・料金は利用中のサービスに従います。
 
-## 第1機能（カラー版）を使う
+Qwenを使う場合は、別途Qwen-Image 2.1対応ノード・モデルを用意したComfyUIを起動してください。Manga Line Extractionには`comfyui_controlnet_aux`も必要です。これらは同梱せず、セットアップスクリプトも追加・更新しません。[必要なノードと実行方法](docs/MANGA_WORKFLOW.md#2b-qwen-image-21で生成するcomfyui)を参照してください。
 
-`input/` を作り、完成画像と対応する線画を配置します。このフォルダをCodexで開き、次のように依頼します。
+**Qwenを選んでも、一連の作業が完全にローカルで完結するわけではありません。** Codexによる画像確認に加え、トーン版の標準工程では被写体と背景を分ける透過画像をimagegenで生成します。原画像が明らかな白背景の場合は、目視判断でこの透過生成を省略できます。再描画の`none`指定も、補助工程を含む外部AI利用を一括で無効にする指定ではありません。
+
+外部へ画像を送りたくない場合は、画像を渡す前に、各工程のモデル・送信先と利用中の権限設定を確認してください。本ツールは完全ローカルモードを提供していません。送信・保存・学習利用等の条件はサービス／プラン／設定に依存します。[権利・外部送信の注意](#制約注意点)も確認してください。
+
+## クイックスタート
+
+Codexで取得した`PSDMaker-A`フォルダを開き、プロジェクト直下に`input`フォルダを作って入力画像を置きます。以下はCodexへ貼る依頼文です。ファイル名・`work/...`・`output/...`はサンプル名なので、自分の入力と保存先へ置き換えてください。用途ごとに別の作業フォルダと出力先を使います。
+
+### 完成イラストをPSDに分解する
 
 ```text
 AGENTS.mdとdocs/ARTIST_WORKFLOW.mdを読み、
-input/reference.pngとinput/lineart.pngからoutput/my_job/output.psdを作成してください。
+input/reference.pngと、同じ構図の線画input/lineart.pngから編集可能なPSDを作成してください。
+jobはwork/my_color、出力はoutput/my_color/output.psdにしてください。
 描画レイヤー数と色統一許容値はお任せします。
 位置合わせ、意味分類、編集設定、PSD生成、評価、事後レビューまで進めてください。
 ```
 
-「描画レイヤー数は100〜180枚、色統一許容値は30」のようにも指定できます。描画枚数はフォルダを含みません。色統一許容値は0〜100で、値を上げるほど同素材の塗り色を揃えやすくします。未指定・お任せの場合は素材数と色のばらつきから計算します。
+線画がない場合は、依頼文の入力指定を次のように置き換えます。画像生成機能を利用できる環境が必要です。
 
-線画がない場合は、利用中の環境に画像生成機能があれば作成を依頼できます。生成線画の形状差を確認し、原画を変形せず線画側を位置合わせします。
+```text
+入力はinput/reference.pngです。線画はありません。
+画像生成機能で同じ構図の線画を別ファイルへ作り、位置ずれを確認してからPSDを作成してください。
+```
 
-`start_preview.bat` を開くと別ウィンドウでPSD・参照・差分・線画・背景・配色を表示できます。PSDができるまでは待機し、保存後に表示を更新します。起動は任意です。
+描画レイヤー数は「100〜180枚」、色統一許容値は「30」のように指定できます。枚数にフォルダは含みません。色統一許容値は0〜100で、大きいほど同じ素材の色を揃えやすくします。未指定なら素材数と色のばらつきから決めます。
 
-主な成果物は `output.psd`、`coloring_reference.json`、再合成画像、`analysis.json`、意味計画、比較画像・事後レビュー結果です。`work/my_job/` には領域・マスクと再開用キャッシュを保存します。
-
-## 第2機能（カラー版）を使う
-
-第1機能を終えると、出力先に `output.psd` と `coloring_reference.json` が作られます。この2つは、元の絵のどの部分をどんな色で塗ったかを第2機能へ伝えるためのセットです。削除せず、同じ場所に保管してください。
-
-次に着色したい線画を用意し、このフォルダをCodexで開いて、次のように依頼します。`my_first_job`、ファイル名、出力先は自分のものに置き換えてください。
+### 別の線画を参照色で着色する
 
 ```text
 AGENTS.mdとdocs/COLORING_WORKFLOW.mdを読み、input/new_pose_lineart.pngを着色してください。
-第1機能で作ったoutput/my_first_job/output.psdと、その隣のcoloring_reference.jsonを参照してください。
-新しいjobはwork/my_new_pose、出力はoutput/my_new_pose/output.psdにしてください。
-参照パレットの意味確認、下塗り、PSD生成、事後レビューまで進めてください。
+参照はoutput/my_color/output.psdと、その隣のcoloring_reference.jsonです。
+jobはwork/my_coloring、出力はoutput/my_coloring/output.psdにしてください。
+新線画の素材を確認して参照色で下塗りし、PSD生成と事後レビューまで進めてください。
 ```
 
-まずは「下塗りだけ」と頼んでも構いません。影・ハイライトもほしい場合は、依頼文に追加してください。第2機能では新しい線画の各部分を確認してから着色するため、元の絵の位置をそのままコピーするものではありません。
+影・ハイライトも必要なら、その希望と画像生成による照明ガイドの利用を依頼文に追加します。PSDと対応するJSONを同じフォルダに保管すれば、元のjobがなくても参照できます。ベース色の一致と、完成色の明るさ・色味は分けて確認します。
 
-影・ハイライトを付ける際は、元PSDの完成色も参照します。出力後は髪・肌・白布などの明るさと色味を素材別に比較し、ベース色が同じでも暗さや色抜けが起きていないか確認します。
-
-第1機能で作ったPSDと `coloring_reference.json` があれば、元の `work/` フォルダがなくても着色を続けられます。線画は別ポーズでもかまいませんが、同じキャラクター・衣装を想定したものが扱いやすくなります。
-
-以前に作ったjobへJSONを追加する場合:
-
-```powershell
-.\.venv\Scripts\python.exe -m anime_layer_agent export-coloring-reference --job work/source
-```
-
-## 第1機能（トーン版）を使う
-
-カラーイラストを `input/` に置き、このフォルダをCodexで開いて次のように依頼します。
+### カラーイラストを漫画トーン化する
 
 ```text
 AGENTS.mdとdocs/MANGA_WORKFLOW.mdを読み、input/color.pngを漫画原稿風にトーン化してください。
-再描画はimagegen（またはQwen-Image 2.1）、トーンは網点でお願いします。
-jobはwork/my_manga、出力はoutput/my_manga/output.psdにしてください。
+再描画と線抽出はimagegen、トーン形式はdots（網点）でお願いします。
+背景分離用の透過画像生成も含めてimagegenを使用できます。
+jobはwork/my_manga、出力はoutput/my_manga/output.psdとoutput/my_manga/preview.pngにしてください。
+トーン設定は既定値を使い、意味分類、位置合わせ、PSD生成、事後レビューまで進めてください。
 ```
 
-- 再描画（白・黒・トーンの判断）と線の抽出には、Codex組込みのimagegenか、ComfyUI上のQwen-Image 2.1を選べます。Qwenを使う場合は先にComfyUIを起動してください（Qwen-Image 2.1対応版と、線抽出用のcomfyui_controlnet_auxが必要です）。
-- QwenImageでAI編集する際の既定サイズは1Mpxです。必要な場合は`run-comfy-manga --megapixels 2`のように変更できます。
-- 画像生成のために元画像を縮小した場合は、縮小倍率と生成画像のサイズから元のサイズへ戻して位置を合わせます。元画像は変形しません。
-- パーツ分けはCodexがカラーの原画を見て判断します。トーン化は通常、ツールの既定値とパーツごとの自動判定を使い、Codexによる濃度・網・閾値の調整を挟みません。推奨設定を依頼した場合だけ、Codexが調整案を提示・適用します。指定した数値は優先され、利用者自身がアジャスト画面で調整することもできます。
-- PSDは上から「ホワイト」「線画」「ベタ・トーン（衣装→パーツ→ベタ／ハイライト／影／ベース）」「紙」の順です。ベタの下にもトーンを敷いてあるので、ベタを削るとその部分はトーンになります。ごく小さな黒の粒は、AI再描画のノイズとしてベタから除きます。網点は全レイヤー共通の角度・線数なので、パーツを重ねてもモアレが出ません。CLIP STUDIO PAINTでトーン化したい場合は、グレー塗りの形式も選べます。
+再描画は`imagegen`／`qwen`／`none`、線抽出は`imagegen`／`qwen`（Manga Line Extraction）／`provided`（用意した線画）／`redraw`（再描画から抽出）、トーン形式は`dots`（網点）／`gray`（グレー塗り）から選べます。Qwenの再描画は既定1Mpxです。選択肢と補助工程の詳細は[トーン版の手順](docs/MANGA_WORKFLOW.md)を参照してください。
 
-トーン化の処理は [ComfyUI-MangaScreen](https://github.com/ashukae/ComfyUI-MangaScreen)（MIT License）を元にしています。
+通常は既定値で出力します。自分で調整する場合は、位置合わせと意味分類の完了後に`start_manga_adjust.bat`を開きます。数値変更後は「反映」→「PNG出力」または「PSD出力」で保存します。PSD出力後にはCodexによる事後レビューも必要です。
 
-生成・位置合わせ・パーツ確認後は、通常そのまま既定値でPNG・PSDを出力します。利用者が調整したい場合は、`start_manga_adjust.bat` で調整画面を開けます。「MangaScreen方式」と「階調化方式」を切り替え、スライダーや階調バーで数値を変え、「反映」でプレビューを更新、「PSD出力」または「PNG出力」で保存します。階調化方式ではトーン線数（LPI）・dpi・階調の境界・段階ごとの濃度（ベタ100%とホワイト0%は固定）を指定できます。よく使う設定は「プリセットとして保存」で名前を付けて保存し、「プリセットを読み込む」で呼び出せます。コマ枠・紙質は将来の実装予定です。
+### 別の線画へトーンを引き継ぐ（検証中）
 
-利用者が前回の適用値の再利用を選ぶ場合（新規の既定値制作では使いません）:
-
-```powershell
-.\.venv\Scripts\python.exe -m anime_layer_agent export-manga --job work/my_manga --reuse-last --output output/my_manga/output.psd
-.\.venv\Scripts\python.exe -m anime_layer_agent export-manga-png --job work/my_manga --reuse-last --output output/my_manga/output.png
+```text
+AGENTS.mdとdocs/TONE_TRANSFER_WORKFLOW.mdを読み、input/new_tone_lineart.pngへトーンを貼ってください。
+参照はoutput/my_manga/output.psdと、その隣のtone_reference.jsonです。
+jobはwork/my_tones、出力はoutput/my_tones/output.psdとoutput/my_tones/preview.pngにしてください。
+参照の素材濃度と網設定を維持し、新線画の素材と役割を確認して、出力と事後レビューまで進めてください。
 ```
 
-PSD出力は読み戻し検証と事後確認画像の生成まで自動で行い、PSDの隣に第2機能へ引き継ぐ `tone_reference.json` を保存します。PNG出力は原寸の合成画像を保存します。目視確認とPSDの `finish-review` は別途必要です。操作方法・設定保存先は [漫画トーン化の手順](docs/MANGA_WORKFLOW.md) を参照してください。
+画面で進める場合は`start_manga_adjust.bat`の「別線画へトーン」から、参照・新線画・新規作業フォルダを選びます。領域に素材とベース・影・ハイライト・ベタの役割を割り当て、全領域を確認して「反映」し、出力します。閉じていない陰影を自動で描き足す機能はありません。[詳しい操作手順](docs/TONE_TRANSFER_WORKFLOW.md)を参照してください。
 
-## 第2機能（トーン版）を使う（検証中）
+### 作業中の確認と成果物
 
-第2機能（トーン版）は現在、出力品質を検証中です。
+`start_preview.bat`を開くと、Codexが登録した監視先のPSD・参照・差分・線画・背景などを別ウィンドウで確認できます。PSD作成前は待機し、保存後に表示を更新します。画面の起動は任意です。
 
-`start_manga_adjust.bat` を開いて「別線画へトーン」を押し、参照job（またはPSDと同じ場所にある `tone_reference.json`）、新しい線画、新規作業フォルダを選びます。
+PSDと参照JSONに加え、解析結果や比較画像・事後レビュー結果を保存します。`work/`は再開用データ、`output/`は成果物の保存先です。PSDを編集すると参照JSONのハッシュと一致しなくなるため、そのJSONを編集後のPSDとそのまま組み合わせることはできません。[配色JSON](docs/COLORING_REFERENCE.md)／[トーンJSON](docs/TONE_REFERENCE.md)の仕様を参照してください。
 
-画面で参照素材と「ベース・影・ハイライト・ベタ」を選び、新線画の領域をクリックして割り当てます。ピンクは未割当です。各素材の濃度と網の設定は通常そのまま引き継ぎ、利用者は必要に応じて調整できます。全領域を目視確認して「反映」すると、原寸プレビューからPNG・PSDを出力できます。影や光を貼る場所は新線画の閉領域へ指定します。
+## 制約・注意点
 
-第1・第2機能のトーンPSDには `tone_reference.json` が付属します。PSDとJSONを同じフォルダで保管すれば、元のjobがなくても引き継げます。以前のjobへのJSON追加と新線画の準備をCLIで行う場合:
+- **第三者の制作物や、権利・外部AI利用の許諾が不明な画像、機密画像は入力しないでください。** 自分が権利を持つか、権利者から外部AIへの送信・解析・再構成・PSD出力に必要な許諾を得た画像だけを使ってください。公開画像、預かった原稿、二次創作、版権キャラクター、スクリーンショット、人物写真も、入力してよいとは限りません。
+- **画像と作業指示はCodexおよび必要な画像生成機能の提供事業者へ送信されます。** 国外を含むサーバへの送信・保存・安全確認・人による確認・モデル改善や学習等の扱いは、サービス／プラン／設定／規約に依存します。作者はこれらを管理できず、送信後の完全削除も保証できません。
+- **出力品質・用途適合性は保証しません。** パーツの誤認識・欠落・混入、線やマスクの位置ずれ、色・透過の不正確さ、PSD編集時の互換性問題が起こり得ます。公開・印刷・納品前には利用者自身で確認・修正してください。
+- 数値評価は意味分離や見た目の保証ではありません。実PSDの色替え・単独表示・影や光の表示切替、トーンの原寸表示を確認します。原画との差とPSD読み戻しの誤差は別に評価します。
+- 隠れたパーツの描き足し、Live2D用の完全パーツ展開、ベクター線画は対象外です。開いた線、細い模様、厚塗り、複雑な透過、特殊発光にも限界があります。二値化やJPG圧縮で細線が変わることがあります。
+- 網点は共通の角度・位置で描きますが、拡大縮小や他の網との重なりでモアレが生じる場合があります。100%表示と実際の出力先で確認してください。
+- 大きい画像や複雑な画像では処理時間・メモリ・トークン消費が増える場合があります。
+- **付属作例のPhotoshop／CLIP STUDIO PAINTでの実アプリ検証は未実施です。** 読み戻し検証は、実アプリでの編集品質や未知の入力の品質を保証しません。
 
-```powershell
-.\.venv\Scripts\python.exe -m anime_layer_agent export-tone-reference --job work/my_manga
-.\.venv\Scripts\python.exe -m anime_layer_agent prepare-tone-transfer --lineart input/new_lineart.png --source-job work/my_manga --job work/new_tones
-.\start_manga_adjust.bat --job work/new_tones
-```
+## 詳細ドキュメント
 
-画面で全領域の素材・役割を割り当て、目視確認のチェックを入れて「反映」します。その後、画面の出力ボタンまたは次のコマンドで保存します。`--reuse-last` は保存済みの調整値を使う指定で、領域の確認を省略するものではありません。
+- [作例ガイド：入力・出力・再現条件・検証数値](examples/README.md)
+- [Agent共通手順](docs/AGENT_WORKFLOW.md) ／ [Codexへの作業指示](AGENTS.md)
+- [カラーPSD分解](docs/ARTIST_WORKFLOW.md) ／ [位置合わせ・領域抽出](docs/COMPACT_WORKFLOW.md)
+- [別線画の着色](docs/COLORING_WORKFLOW.md) ／ [配色JSON](docs/COLORING_REFERENCE.md) ／ [任意の法線照明](docs/NORMAL_LIGHTING_WORKFLOW.md)
+- [漫画トーン化](docs/MANGA_WORKFLOW.md) ／ [別線画へのトーン貼り](docs/TONE_TRANSFER_WORKFLOW.md) ／ [トーンJSON](docs/TONE_REFERENCE.md)
+- [事後レビュー](docs/POST_REVIEW_CHECKLIST.md) ／ [仕様](docs/SPEC.md)
 
-```powershell
-.\.venv\Scripts\python.exe -m anime_layer_agent export-manga-png --job work/new_tones --reuse-last --output output/new_tones/output.png
-.\.venv\Scripts\python.exe -m anime_layer_agent export-manga --job work/new_tones --reuse-last --output output/new_tones/output.psd
-```
-
-PNGとPSDは同じ描画処理を使います。参照のポーズ・マスクは移植せず、新線画の線を二値化して固定します。詳しくは [第2機能（トーン版）の手順](docs/TONE_TRANSFER_WORKFLOW.md) を参照してください。
-
-## CLIと作業手順
-
-Codexに作業を依頼して使う場合は、この章は読み飛ばして大丈夫です。ここは、Pythonのコマンドを自分で実行して、処理の準備・確認・PSD作成を進めたい人向けです。
-
-CLIでは、画像と線画の位置合わせ、塗る場所の一覧作成、PSDの組み立て、出力後の確認画像作成などを実行できます。ただし「ここは髪」「ここは服」といった絵の意味を判断して計画へ書き込む作業は別に必要です。コマンドだけを順番に実行しても、確認なしに完成PSDができるわけではありません。
+CLIを自分で使う場合は、次のヘルプと各手順のコマンド例を参照してください。CLIによる準備の後も、領域の意味分類と目視確認が必要です。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent --help
-.\.venv\Scripts\python.exe -m anime_layer_agent prepare-coloring --lineart examples/coloring/lineart.jpg --source-reference examples/output/coloring_reference.json --job work/coloring_example --gap-close 5 --min-area 20
 ```
-
-上の `prepare-coloring` は、線画の中から「塗り分ける候補」を見つけて一覧にする準備コマンドです。第2機能（カラー版）を手動で進める場合は、一覧を確認して計画を作り、`paint-flats`（下塗り）、必要に応じて `prepare-lighting`（影・ハイライトの準備）、`build-colored`（PSD作成）、`post-review` と `finish-review`（出力確認）の順に進めます。元の作業フォルダを参照する場合は、`--source-reference` の代わりに `--source-job work/source` を指定します。
-
-- [Agent共通手順](docs/AGENT_WORKFLOW.md)
-- [第1機能（カラー版）：編集優先工程](docs/ARTIST_WORKFLOW.md) ／ [位置合わせ・領域抽出](docs/COMPACT_WORKFLOW.md)
-- [第2機能（カラー版）：指定線画への着色](docs/COLORING_WORKFLOW.md) ／ [配色JSONの仕様](docs/COLORING_REFERENCE.md)
-- [第1機能（トーン版）：漫画トーン化](docs/MANGA_WORKFLOW.md)
-- [第2機能（トーン版）：別線画へのトーン貼り](docs/TONE_TRANSFER_WORKFLOW.md) ／ [トーンJSONの仕様](docs/TONE_REFERENCE.md)
-- [事後レビュー](docs/POST_REVIEW_CHECKLIST.md) ／ [仕様](docs/SPEC.md)
-
-## 品質と制約
-
-数値合格だけでは意味分離・境界・色やトーンの自然さを証明できません。カラー版は実PSDの色替え、線・背景単独、影・光OFFを確認します。トーン版は線・ベタ・ホワイト・パーツ別トーン、影・光OFF、網点の100%表示を確認し、所見と画像根拠を記録します。
-
-第1機能（カラー版）は原画との差と編集目標からの読み戻し誤差を分けます。第2機能（カラー版）はPythonの着色目標、トーン版の両機能はPythonのトーン描画目標からの読み戻しを評価します。トーン化前のカラー画像や別ポーズの参照画像との画素一致は合否にしません。
-
-- 隠れた髪・腕・衣服の描き足し、Live2D用の完全パーツ展開、ベクター線画は対象外です。
-- 開いた線、細い模様、厚塗り、複雑な透過、特殊発光などは正しく分離・着色できない場合があります。
-- 線画の二値化やJPG圧縮で細線が変わる場合があります。
-- 第2機能（トーン版）は付属の別ポーズ作例でも素材の引き継ぎ・PNG/PSD出力を確認しています。閉じていない領域の陰影は自動生成せず、黒い服の内部線がベタに埋もれるなどの制約が残ります。
-- Photoshop／CLIP STUDIO PAINT上での互換性・編集品質は別途確認が必要です。付属作例は実アプリ未検証です。
-
-## 開発用検証
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe scripts/verify_compact.py --job work/my_job
-.\.venv\Scripts\python.exe scripts/verify_preview.py
-```
-
-CLI終了コードは0がコマンド成功、1が入力・実行エラー、2が数値品質・編集読み戻し・指定枚数・レビュー判定の未達です。buildやpost-reviewの成功だけでは視覚確認は完了しません。
 
 ## ライセンス
 

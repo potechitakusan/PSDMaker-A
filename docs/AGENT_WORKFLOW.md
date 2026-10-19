@@ -6,7 +6,7 @@
 
 開始時刻を記録し、受信時刻が取得できなければ最初の作業時刻と明記する。フェーズと完了時刻、経過秒数・分秒を残す。画像解析より先にstart_preview.batの存在を確認し、利用者へ案内する。monitorで対象PSD/jobを登録し、画面の起動待ちでは作業を止めない。
 
-Pythonは `.venv/Scripts/python.exe` を使う。依存不足は `python scripts/bootstrap.py` でプロジェクト内へ追加する。
+Pythonは `.venv/Scripts/python.exe` を使う。環境の作成・依存不足の解消には `python scripts/bootstrap.py` を使う。依存追加・外部AI利用は [AGENTS.mdの権限方針](../AGENTS.md#権限と画像生成の利用) に従い、当該利用者の指示と環境の許可設定を確認する。
 
 ```powershell
 .\.venv\Scripts\python.exe -m anime_layer_agent monitor --psd output/my_job/output.psd --job work/my_job
@@ -27,7 +27,26 @@ Pythonは `.venv/Scripts/python.exe` を使う。依存不足は `python scripts
 
 tone_transfer_job.jsonのあるjobはmanga_job.jsonも持つため、第2機能（トーン版）の手順を優先する。画面で保存した調整案を出力へ使う場合はexport-manga/export-manga-pngを使う。build-mangaはsemantic_planを直接使い、未出力のGUI調整案は取り込まない。
 
-新規分解で線画がなければ画像生成機能で別ファイルへ作り、サイズ・局所ずれを補正前後の画像と数値で確認してから分類する。第2機能の着色・トーン貼りでは指定線画を参照キャラクターのポーズへ変形しない。
+新規分解で線画がなければ上記の権限方針に従って画像生成機能で別ファイルへ作り、サイズ・局所ずれを補正前後の画像と数値で確認してから分類する。生成機能を利用できない場合は線画の提供が必要。第2機能の着色・トーン貼りでは指定線画を参照キャラクターのポーズへ変形しない。
+
+現行方式の編集対象は `semantic_plan.json`。compactの構築時に出力されるschema 2の `layer_plan.json` は評価用で、直接編集しない。`evaluate`は構築済みcompactの再評価にも使えるが、意味計画を変更したら先に `build-compact` で再構築する。coloring・mangaは各buildの評価とpost-reviewを使う。
+
+## 旧方式の既存ジョブを再開する
+
+この節は `job.json` とschema 1の `layer_plan.json` を使う既存jobだけに適用する。新規制作は上の機能別手順を使う。`compact_job.json`、`coloring_job.json`、`manga_job.json`のあるjobへ旧方式のbuild・repair・apply-repairを実行しない。
+
+overview/contact sheetを画像ツールで開き、Region IDと素材の役割を `layer_plan.json` に記入する。修正依頼の局所画像を確認し、パッチを作ってからapply-repairする。修正は最大3回。以下のjob名とパッチ名は置き換える。
+
+```powershell
+.\.venv\Scripts\python.exe -m anime_layer_agent build --job work/legacy_job
+.\.venv\Scripts\python.exe -m anime_layer_agent evaluate --job work/legacy_job
+# 修正が必要な場合のみ
+.\.venv\Scripts\python.exe -m anime_layer_agent repair --job work/legacy_job
+# repairが出す局所画像を確認し、修正パッチを作成してから実行
+.\.venv\Scripts\python.exe -m anime_layer_agent apply-repair --job work/legacy_job --patch work/legacy_job/repair_patch.json
+```
+
+`analyze` / `run`も旧方式の互換コマンドであり、現行の新規制作の入口には使わない。パッチ等の詳細は各コマンドの `--help` とjob内の修正依頼を参照する。
 
 ## 意味分類の責任
 
