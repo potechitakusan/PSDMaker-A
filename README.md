@@ -64,6 +64,22 @@ Codexは、GPT-6 Astra Light(low) 以上を推奨します。Claudeなど他の�
 
 第1機能は2793×4096px・600dpi・26描画レイヤー、9パーツです。背景は1パーツにまとめ、ハイライトと影を別レイヤーにしました。画像幅基準の網点列数200を使い、PNGとPSD読み戻しは全画素一致です。線には粒状の跡が残ります。設定と詳しい制約は作例説明を参照してください。
 
+### imagegenのみの作例
+
+同じカラー原画から、線画・モノクロの再描画ガイド・背景を削除した透過画像をimagegenで作りました。透過画像のalphaを使って被写体と背景を分け、原画を見てパーツを新しく割り当てています。この例ではQwenの生成画像・抽出線・マスクを使っていません。
+
+| ツールの既定値 | Codexが閾値などを調整 |
+|---|---|
+| ![imagegen・既定値版](examples/manga_imagegen_default/preview.png) | ![imagegen・Codex調整版](examples/manga_imagegen_adjusted/preview.png) |
+
+- 既定値版：[PNG](examples/manga_imagegen_default/preview.png) ／ [PSD](examples/manga_imagegen_default/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_default/tone_reference.json) ／ [PSDの線画](examples/manga_imagegen_default/lineart.png)
+- 調整版：[PNG](examples/manga_imagegen_adjusted/preview.png) ／ [PSD](examples/manga_imagegen_adjusted/output.psd) ／ [トーン情報JSON](examples/manga_imagegen_adjusted/tone_reference.json) ／ [PSDの線画](examples/manga_imagegen_adjusted/lineart.png)
+- 共通の生成素材：[入力線画](examples/manga_imagegen_default/input_lineart.png) ／ [再描画ガイド](examples/manga_imagegen_default/redraw.png) ／ [背景削除版](examples/manga_imagegen_default/foreground.png)
+
+拡大せず1036×1519pxで作成し、各25描画レイヤー＋17フォルダ、9パーツです。背景は1パーツで、影と白ハイライトは独立しています。既定値版は数値と各パーツのトーン指定を変更していません。依頼に基づく調整版はコートと背景のベタをトーンへ変え、コートのしわが見えるようにしました。
+
+PSDの線画は入力線画に再描画由来の線を加えたものです。変更した数値と検証結果は[imagegenのみの作例](examples/README.md#imagegenのみの作例)を参照してください。
+
 ## セットアップ
 
 - Python 3.12以上（プレビューにはTkinterが必要）

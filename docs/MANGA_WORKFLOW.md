@@ -5,7 +5,7 @@
 役割分担:
 
 - **Codex Astra**: カラー原画を見てパーツの意味・領域・階層を判断し、全確認画像を目視する。仕上げ数値は通常変更しない。
-- **画像編集モデル**: 明暗と線だけを描き直す。Codex組込みimagegenか、ComfyUI上のQwen-Image 2.1を利用者が選ぶ。
+- **画像編集モデル**: 明暗と線を描き直す。Codex組込みimagegenか、ComfyUI上のQwen-Image 2.1を利用者が選ぶ。被写体と背景を分ける透過画像は、別途imagegenで生成する。指定原画像が明らかな白背景の場合は、Codexの判断で透過生成を省略できる。
 - **Python**: 縮小・倍率換算・位置合わせ・トーン計算・PSD保存・読み戻しを担当する。
 
 AIの再描画結果を完成原稿として貼らない。値（明暗）と線の手掛かりとして元サイズへ戻し、パーツ別に網点化する。
@@ -66,20 +66,33 @@ AIの再描画結果を完成原稿として貼らない。値（明暗）と線
 
 ## 2c. 再描画なしで進める
 
-`prepare-manga --redraw-engine none` を指定する。生成工程を省き、`register-manga --job work/<name>` で元画像のManga Levelsと線を準備する。線画がある場合は準備時に `--line-engine provided`、登録時に `--lineart input/lineart.png` を指定する。この場合も全領域の意味確認と事後レビューは必要。
+`prepare-manga --redraw-engine none` を指定する。再描画の生成工程を省き、元画像のManga Levelsと線を使う。次節に従って背景透過画像を用意し、`register-manga --job work/<name> --foreground work/<name>/generated/foreground_imagegen.png` で登録する。明らかな白背景として透過生成を省略する場合は`--foreground`を付けない。線画がある場合は準備時に `--line-engine provided`、登録時に `--lineart input/lineart.png` を追加する。この場合も全領域の意味確認と事後レビューは必要。
 
 ## 3. 元サイズへの換算と位置合わせ
 
+### 背景を透過した被写体画像を用意する
+
+新規制作ではimagegenにカラー原画（`generation_input.png`）を渡し、背景を削除した透過PNGを別ファイル（例: `generated/foreground_imagegen.png`）へ作る。再描画モデルをQwen/noneにしていても、この背景分離の標準工程はimagegenを使う。利用者のモデル・外部送信に関する明示制約を優先する。`none`は陰影の再描画を省く指定である。
+
+**例外: 利用者が指定した原画像を目視し、明らかな白背景とCodexが判断した場合は、追加確認なしで背景透過生成を省略できる。** 生成後の画像が白くなったことを根拠にせず、指定原画像で判断する。白い衣装・小物・髪のハイライトを背景と誤認しないよう確認する。省略理由と確認結果を`docs/jobs/<job>-decisions.md`へ記録し、新規jobでは`--foreground`を付けずに登録する。通常の線画由来の領域から背景を割り当て、背景/被写体単独を含む事後レビューは続ける。白背景か判断が曖昧な場合は標準の透過生成工程を使う。
+
+- 構図、人物の位置と大きさ、顔、髪、衣装、小物、画面端を保持する。背景除去のみを指示し、中央への移動・トリミング・拡大・描き足しをしない。
+- imagegenの`transparent_background:true`を使い、実alphaを持つPNGを保存する。白背景や描かれた市松模様は透過として扱わない。
+- 髪先、マフラーなどの房、腕や持ち手の穴、画面端を確認する。元絵・線画・透過版のサイズ差と位置差を確認する。
+- 透過版のRGBは完成原稿へ貼らない。Pythonがalphaを原画の格子へ位置合わせし、被写体と背景の領域を分ける。原画のRGB・陰影ガイド・線画の画素はこの背景分離では変更しない。
+
 ```powershell
-.\.venv\Scripts\python.exe -m anime_layer_agent register-manga --job work/<name> --redraw work/<name>/generated/redraw_imagegen.png --lineart work/<name>/generated/lineart_imagegen.png
+.\.venv\Scripts\python.exe -m anime_layer_agent register-manga --job work/<name> --redraw work/<name>/generated/redraw_imagegen.png --lineart work/<name>/generated/lineart_imagegen.png --foreground work/<name>/generated/foreground_imagegen.png
 ```
 
 Qwenで生成した画像は`manga_job.json`の記録から自動で選ばれる。
 
 - **倍率換算**: 生成画像が入力全体をどう収めたかを`stretch`/`contain`（余白付き）/`cover`（切り抜き）から線の一致で選ぶ（`--fit`で固定可）。`original_px_per_generated_px`が元画像1px当たりの倍率になる。`cover`で見えない範囲は元画像のManga Levelsで補い、`invalid_fraction`へ記録する。
-- **局所補正**: 滑らかな光学フロー（最大`--max-shift` px）で再描画のずれを補正する。線の距離（中央値）が改善した場合だけ採用する。元画像とパーツ境界は変形しない。
+- **局所補正**: 滑らかな光学フロー（最大`--max-shift` px）で再描画のずれを補正する。線の距離（各距離を10pxで打ち切った双方向平均）が改善した場合だけ採用する。元画像は変形しない。
 - `manga_alignment.png`を必ず開き、赤線と元画像の重なりを確認する。`needs_attention`がtrue（距離2px超、または範囲外0.2%超）なら、補正前後の数値と残る差を判断ログへ記録する。大きくずれた生成画像は作り直す。
 - パーツ候補の領域は線画、再描画の線、source_jobの順で作る。カラー原画の上に`manga_regions_overview.png`（番号入り）と`manga_regions_*.png`（領域ごとの切り抜き）を出力する。座標はすべて元画像のpx。
+- `--foreground`のalphaは同じ倍率・採用した局所補正で移し、0.5以上を被写体とする。被写体内は線画由来の領域を保持し、それ以外を背景領域にまとめる。`foreground_alignment.png`に生成透過版と元絵から取り出した被写体/背景、`foreground_mask.png`に実マスクを出す。背景除去自体を位置差と数えないよう、位置合わせの距離は被写体内部で測る。背景の穴、髪縁、房、画面端は距離点数と別に必ず目視する。
+- 透過版を使う場合はパス・ハッシュ・サイズ・補正前後の距離を保存し、入力の変更は再登録を要求する。再登録は記録済みの透過画像を使う。CLI引数は任意で、新規作業では上記の明らかな白背景の例外を除いてこの透過生成工程を実施する。
 
 ## 4. パーツの意味分類（Astraの判断）
 
@@ -89,7 +102,7 @@ Qwenで生成した画像は`manga_job.json`の記録から自動で選ばれる
 - semantic_idとdisplay_nameは一意にする。group_pathで「キャラクター→衣装」のような階層を作る。
 - 意味は色だけで決めない。例えば赤いリボンと赤い服は別パーツにできる。
 - 確認後に`classification_source`を`astra_reviewed`へ変更する。
-- 背景を1パーツにする指定があれば、空・雲・海などを同じbackgroundへまとめ、影・ハイライトはレイヤーで分ける。紙の白になった背景も独立編集する指定がある場合は、そのpartに`separate_white_highlights:true`を付ける。数値・合成結果を変えず、白い部分をハイライトとして保存する（第2機能ではhighlight役割の領域だけ）。
+- 背景は利用者から分割指示がない限り、空・雲・海などを同じ`background`の1パーツへまとめる。影・ハイライトは別レイヤーにし、新規計画では`separate_white_highlights:true`を付けて紙色の白も編集可能にする。数値・合成結果を変えず、白い部分をハイライトとして保存する。既存job・低水準APIのフラグ既定は変更しない。背景の形状は必ず原画と割り当てた領域で確認する。透過版を使う場合はそのマスクも確認し、AIの欠落をそのまま採用しない。
 
 ```json
 {"semantic_id":"hair","display_name":"髪","group_path":["キャラクター","頭"],"regions":[2,3],
@@ -189,6 +202,8 @@ PSDの構成（上から順）:
 
 overviewには次を並べる: カラー原画、元サイズへ戻した再描画、パーツなしの仕上げ、保存PSD、線画単独、ベタ単独、パーツ別着色ベタ、ホワイト単独、トーン単独、パーツ別着色トーン、影OFF、ハイライト/ホワイトOFF、ベースOFF。
 
+`background`パーツがある場合は実PSDの背景単独・被写体単独も出す（全体共通の線画は含めず、素材レイヤーだけを表示）。背景透過版を使ったjobでは`foreground_alignment.png`と`foreground_mask.png`もレビュー根拠に含める。背景が1パーツであることと、その影・ハイライトが別レイヤーであることを確認する。
+
 10項目（input_alignment, part_masks, tone_values, shadow_highlight, beta_white, linework, screen, hierarchy_budget, readback, delivery）へstatus・所見・根拠画像を記入する。特に確認すること:
 
 - 肌・白布に網が入っていないか。黒髪・黒服がベタになっているか。
@@ -202,6 +217,8 @@ overviewには次を並べる: カラー原画、元サイズへ戻した再描�
 ## 第2機能（トーン版）への引き継ぎ
 
 [公開作例](../examples/README.md#トーン版) にQwenImage2.1の再描画とManga Line Extractionから作った第1機能、Qwenで生成した別ポーズ線画へ素材濃度を継承した第2機能のPNG・PSD・JSON・線画を収録している。第1機能の掲載PSDは初回の既定値出力から利用者が調整した版で、Codexによる追加調整はしていない。第2機能は調整前の参照から作った検証用ファイルを保持している。元の制作jobがなくても、現在の作例PSDと対応するJSONから新しいトーン貼りを準備できる。
+
+その下に[imagegenのみの第1機能作例](../examples/README.md#imagegenのみの追加作例)も収録している。線画・再描画・背景透過版をimagegenで作り、既定値版と利用者の依頼によるCodex調整版を別PSD・別JSONで保存した。既存Qwen作例は背景透過工程を導入する前の成果物として保持している。
 
 新しいPSDには `tone_reference.json` を自動出力する。旧jobは `export-tone-reference --job work/<name>` で書き出せる。PSDとJSONを一組で保管する。素材別のベース・影・光・ベタ下の濃度とベタ可否を解決し、意味名・階層・網設定を引き継ぐ。元の領域番号や陰影形状は移植しない。書式と検証範囲は [TONE_REFERENCE.md](TONE_REFERENCE.md)。
 

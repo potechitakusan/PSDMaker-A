@@ -280,6 +280,9 @@ def register_image(path, original_gray, input_size, fit='auto', max_shift=12, ki
     with Image.open(path) as source:
         gen_size = source.size
         rgba = np.asarray(source.convert('RGBA'), np.float32) / 255
+    foreground = kind == 'foreground'
+    if foreground and (not (rgba[..., 3] < .5).any() or not (rgba[..., 3] >= .5).any()):
+        raise ValueError('Foreground image needs actual transparent background and opaque subject pixels')
     g = tone.gray(rgba[..., :3] * rgba[..., 3:] + (1 - rgba[..., 3:]))
     inverted = False
     if kind == 'lineart' and g.mean() < .5:  # Manga Line Extraction: white lines on black
@@ -293,10 +296,16 @@ def register_image(path, original_gray, input_size, fit='auto', max_shift=12, ki
         candidates = {fit: candidates[fit]}
     scores = {}
     mapped = {}
+    alpha_maps = {}
     for name, box in candidates.items():
         image, valid = map_to_original(g, box, (w, h))
         mapped[name] = (image, valid, box)
-        scores[name] = chamfer(reference_feature, stroke_feature(image), valid)
+        score_valid = valid
+        if foreground:
+            alpha, _ = map_to_original(1 - rgba[..., 3], box, (w, h))
+            alpha_maps[name] = 1 - alpha
+            score_valid = valid & ndi.binary_erosion(alpha_maps[name] >= .5, iterations=3)
+        scores[name] = chamfer(reference_feature, stroke_feature(image), score_valid)
     usable = {k: v for k, v in scores.items() if v is not None}
     chosen = min(usable, key=usable.get) if usable else next(iter(candidates))
     image, valid, box = mapped[chosen]
@@ -304,15 +313,16 @@ def register_image(path, original_gray, input_size, fit='auto', max_shift=12, ki
     yy, xx = np.mgrid[:h, :w].astype(np.float32)
     aligned, valid_aligned, after, flow, flow_used = image, valid, before, np.zeros((h, w, 2), np.float32), False
     if max_shift:
-        target = np.uint8(cv2.GaussianBlur(reference_feature, (0, 0), 1.2) * 255)
-        source = np.uint8(cv2.GaussianBlur(stroke_feature(image), (0, 0), 1.2) * 255)
+        feature_mask = ndi.binary_erosion(alpha_maps[chosen] >= .5, iterations=3) if foreground else 1
+        target = np.uint8(cv2.GaussianBlur(reference_feature * feature_mask, (0, 0), 1.2) * 255)
+        source = np.uint8(cv2.GaussianBlur(stroke_feature(image) * feature_mask, (0, 0), 1.2) * 255)
         candidate = np.clip(cv2.calcOpticalFlowFarneback(target, source, None, .5, 5, 31, 5, 7, 1.5, 0), -max_shift, max_shift)
         # A smooth field follows redraw drift without bending shapes toward strokes the original lacks.
         candidate = cv2.GaussianBlur(candidate, (0, 0), max(4.0, 16 * w / 1024))
         warped = cv2.remap(image, xx + candidate[..., 0], yy + candidate[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         warped_valid = cv2.remap(valid.astype(np.float32), xx + candidate[..., 0], yy + candidate[..., 1], cv2.INTER_NEAREST,
                                  borderMode=cv2.BORDER_CONSTANT, borderValue=0) > .5
-        score = chamfer(reference_feature, stroke_feature(warped), warped_valid)
+        score = chamfer(reference_feature, stroke_feature(warped), warped_valid & feature_mask if foreground else warped_valid)
         if score is not None and (before is None or score < before - .05):
             aligned, valid_aligned, after, flow, flow_used = warped, warped_valid, score, candidate, True
     magnitude = np.linalg.norm(flow, axis=2)
@@ -325,6 +335,16 @@ def register_image(path, original_gray, input_size, fit='auto', max_shift=12, ki
                  generated_lines_within_2px=within(reference_feature, stroke_feature(aligned), valid_aligned),
                  invalid_fraction=float(1 - valid_aligned.mean()))
     stats['needs_attention'] = bool(stats['invalid_fraction'] > .002 or after is None or after > 2.0)
+    if foreground:
+        alpha = alpha_maps[chosen]
+        if flow_used:
+            alpha = cv2.remap(alpha, xx + flow[..., 0], yy + flow[..., 1], cv2.INTER_LINEAR,
+                              borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        aligned = np.where(valid_aligned, alpha, 0).astype(np.float32)
+        stats['alpha_threshold'] = .5
+        stats['foreground_fraction'] = float((aligned >= .5).mean())
+        stats['score_scope'] = 'subject interior; background removal is not an alignment error'
+        g = rgba[..., 3]
     return aligned, valid_aligned, stats, g
 
 
@@ -363,7 +383,7 @@ def region_overview(rgb, labels, path, names=None):
     save_image(picture, path)
 
 
-def register_manga(job, redraw=None, lineart=None, fit='auto', max_shift=12, min_area=None, region_source='auto'):
+def register_manga(job, redraw=None, lineart=None, fit='auto', max_shift=12, min_area=None, region_source='auto', foreground=None):
     """Map generated images to the original grid, then build the part candidates on the color illustration."""
     job, record = manga_job(job)
     if (job / 'tone_transfer_job.json').exists():
@@ -376,6 +396,7 @@ def register_manga(job, redraw=None, lineart=None, fit='auto', max_shift=12, min
         raise ValueError('region_source must be auto, lineart, redraw or source_job')
     redraw = redraw or record['generated'].get('redraw', {}).get('path')
     lineart = lineart or (record['generated'].get('lineart') or record['generated'].get('qwen_lineart') or {}).get('path')
+    foreground = foreground or record['generated'].get('foreground', {}).get('path')
     rgb, _ = load_rgb(job / 'reference.png')
     h, w = rgb.shape[:2]
     original_gray = tone.gray(rgb)
@@ -424,8 +445,28 @@ def register_manga(job, redraw=None, lineart=None, fit='auto', max_shift=12, min
         if regions.max() > 2500:
             raise ValueError(f'{int(regions.max())} regions; raise --min-area or provide a cleaner lineart')
         stats['region_min_area'] = min_area
+    foreground_arrays = {}
+    if foreground:
+        alpha, _, stats['foreground'], _ = register_image(foreground, original_gray, input_size, fit, max_shift, 'foreground')
+        subject = alpha >= .5
+        if not subject.any() or subject.all():
+            raise ValueError('Aligned foreground must leave both subject and background pixels')
+        background_region = int(regions.max()) + 1
+        regions = np.where(subject, regions, background_region).astype(np.int32)
+        foreground_arrays = dict(foreground_alpha=alpha, foreground_mask=subject)
+        stats['foreground']['background_region'] = background_region
+        record['generated']['foreground'] = dict(engine='imagegen', path=str(Path(foreground).resolve()), hash=digest(foreground))
+        write_json(job / 'manga_job.json', record)
+        save_image(Image.fromarray(np.uint8(subject) * 255), job / 'foreground_mask.png')
+        front = np.where(subject[..., None], rgb, .85)
+        back = np.where(subject[..., None], .85, rgb)
+        with Image.open(foreground) as cutout:
+            shown = Image.alpha_composite(Image.new('RGBA', cutout.size, '#b8c4cf'), cutout.convert('RGBA')).convert('RGB')
+        sheet([('Original', image_u8(rgb)), ('Imagegen cutout as generated', shown),
+               ('Aligned subject from ORIGINAL pixels', image_u8(front)), ('Background from ORIGINAL pixels', image_u8(back))],
+              job / 'foreground_alignment.png', columns=2)
     np.savez_compressed(job / 'manga_arrays.npz', rgb=rgb, L=L, pen=pen if pen is not None else np.zeros((h, w), np.float32),
-                        has_pen=np.bool_(pen is not None), redraw_valid=redraw_valid, regions=regions)
+                        has_pen=np.bool_(pen is not None), redraw_valid=redraw_valid, regions=regions, **foreground_arrays)
     regions_hash = digest(job / 'manga_arrays.npz')
     for old in job.glob('manga_regions_*.png'):
         old.unlink()
@@ -657,7 +698,7 @@ def load_manga_inputs(job):
     if digest_array(arrays['regions']) != plan.get('regions_hash'):
         raise ValueError('Regions changed since the plan was made; review the plan again')
     alignment = read_json(job / 'manga_alignment.json')
-    for kind in ('redraw', 'lineart'):
+    for kind in ('redraw', 'lineart', 'foreground'):
         if kind in alignment and digest(alignment[kind]['path']) != alignment[kind]['hash']:
             raise ValueError(f'{kind} image changed; run register-manga again')
     return job, record, plan, arrays
@@ -896,11 +937,13 @@ def post_review(job):
         rgba[dark, :3] = color
         return Image.fromarray(rgba)
 
-    def render(name, only=None, hide=(), tint=False, background='white'):
+    def render(name, only=None, hide=(), tint=False, background='white', owners=None):
         with ExitStack() as stack:
             for layer in pixels:
                 role = items[layer.name]['group']
                 layer.visible = role not in hide and (only is None or role in only)
+                if owners is not None:
+                    layer.visible = layer.visible and layer.name.rsplit('_', 1)[0] in owners
                 if tint and role in ('Base', 'Shadows', 'Highlights', 'Beta'):
                     owner = layer.name.rsplit('_', 1)[0]
                     stack.enter_context(patch.object(layer, 'topil', return_value=tinted(layer, part_colors.get(owner, (255, 0, 0)))))
@@ -930,6 +973,12 @@ def post_review(job):
                ('Shadows OFF', render('no_shadow', hide=('Shadows',))),
                ('Highlights/White OFF', render('no_highlight', hide=('Highlights', 'White'))),
                ('Base tones OFF', render('no_base', hide=('Base',)))]
+    plan = read_json(job / 'semantic_plan.json')
+    background_names = {p.get('display_name', p['semantic_id']) for p in plan['parts'] if p['semantic_id'] == 'background'}
+    if background_names:
+        foreground_names = {p.get('display_name', p['semantic_id']) for p in plan['parts']} - background_names
+        panels += [('Background layers alone', render('background_only', owners=background_names, background='#c5c5c5')),
+                   ('Subject layers alone', render('foreground_only', owners=foreground_names, background='#c5c5c5'))]
     sheet(panels, folder / 'overview.png')
     files.append(folder / 'overview.png')
     # Full-size crop to judge dots: the central quarter of the page at 1:1.
@@ -938,7 +987,8 @@ def post_review(job):
     crop = current.crop((cw // 4, ch // 4, cw // 4 + min(cw // 2, 600), ch // 4 + min(ch // 2, 600)))
     save_image(crop, folder / 'screen_crop_1to1.png')
     files.append(folder / 'screen_crop_1to1.png')
-    files += [job / name for name in ('manga_alignment.png', 'manga_parts_overview.png', 'diff.png') if (job / name).exists()]
+    files += [job / name for name in ('manga_alignment.png', 'manga_parts_overview.png', 'diff.png',
+                                      'foreground_alignment.png', 'foreground_mask.png') if (job / name).exists()]
     context = dict(psd_hash=manifest['psd_hash'], semantic_plan_hash=manifest['semantic_plan_hash'],
                    evidence_hashes={path.relative_to(job).as_posix(): digest(path) for path in files})
     write_json(job / 'post_review_context.json', context)

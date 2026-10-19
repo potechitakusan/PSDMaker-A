@@ -169,6 +169,7 @@ def parser():
     register.add_argument('--job', required=True)
     register.add_argument('--redraw')
     register.add_argument('--lineart')
+    register.add_argument('--foreground', help='Imagegen background-removed RGBA image; its aligned alpha separates subject and background')
     register.add_argument('--fit', choices=['auto', 'stretch', 'contain', 'cover'], default='auto')
     register.add_argument('--max-shift', type=int, default=12)
     register.add_argument('--min-area', type=int)

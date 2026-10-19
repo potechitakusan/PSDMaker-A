@@ -42,9 +42,13 @@ build-coloredは各パーツ内のBase/Shadow/Highlightと最上段の透明線�
 
 prepare-mangaは元画像を変更せず、reference.pngと長辺max_side（256〜4096、既定1536）以下のgeneration_input.pngを保存し、縮小倍率を記録する。再描画はimagegen（Codex）、qwen（ComfyUIのQwen-Image 2.1 Turbo、8ステップ）、none（Manga Levels）から選ぶ。線抽出はimagegen、qwen（Manga Line Extraction）、provided、redrawから選ぶ。run-comfy-mangaは標準ライブラリのHTTPで、起動済みComfyUIへアップロード・実行・取得を行う。QwenImageでAI編集するredraw/qwen_lineartの既定サイズは1Mpxで、CLI・実行関数・ワークフロー生成関数に共通。--megapixelsで0.25〜4Mpxを明示できる。Manga Line Extractionの解像度は原画幅基準。不足ノードは実行前に拒否する。モデル、seed、プロンプト、版、出力ハッシュを記録する。
 
-register-mangaは生成画像を元画像の格子へ戻す。stretch/contain/coverのうち線距離（中央値）が最小のものを選ぶ。次に平滑化した光学フローで最大max_shift px（0〜48、既定12）補正し、改善した場合だけ採用する。倍率、枠、補正前後の距離、2px以内の線の割合、範囲外の割合を記録する。距離2px超または範囲外0.2%超はneeds_attentionとする。範囲外はManga Levelsで補う。パーツ候補はgeometry_labelsで、線画、再描画の線、source_job（第1機能（カラー版）のcompact jobで確認済みの同一画像マスク）の順に作る。再登録で領域が変わったら計画を履歴へ退避し、割当を空にしてpartial_reviewへ戻す。
+register-mangaは生成画像を元画像の格子へ戻す。stretch/contain/coverのうち線距離（各距離を10pxで打ち切った双方向平均）が最小のものを選ぶ。次に平滑化した光学フローで最大max_shift px（0〜48、既定12）補正し、改善した場合だけ採用する。倍率、枠、補正前後の距離、2px以内の線の割合、範囲外の割合を記録する。距離2px超または範囲外0.2%超はneeds_attentionとする。範囲外はManga Levelsで補う。パーツ候補はgeometry_labelsで、線画、再描画の線、source_job（第1機能（カラー版）のcompact jobで確認済みの同一画像マスク）の順に作る。再登録で領域が変わったら計画を履歴へ退避し、割当を空にしてpartial_reviewへ戻す。
 
 build-mangaはastra_reviewed・全領域を一度だけ割り当てた計画・一意の名前・入力ハッシュ一致を必須とする。
+
+第1機能（トーン版）の新規制作は、通常imagegenで背景を透過した被写体PNGを別生成し、`register-manga --foreground`へ渡す。例外として、利用者が指定した原画像が明らかな白背景とCodexが目視判断した場合は、背景透過生成を省略できる。省略理由と白い被写体を背景と誤認していないことを判断ログへ記録し、新規jobでは`--foreground`を省いて通常の領域から背景を割り当てる。背景/被写体の分離確認と実PSDの事後レビューは継続する。
+
+`--foreground`を使う場合は実alphaと被写体がある入力だけを受理し、原画格子へ倍率換算・局所補正したalpha≥0.5で領域を分割する。被写体内は元の領域IDを保持し、外側は新たな背景IDへまとめる。生成RGBは原画・陰影・線に混ぜない。被写体内部の線距離で補正採否を判定し、透過PNGのハッシュ変更は再登録を要求する。`foreground_alignment.png`・`foreground_mask.png`と実PSDの背景/被写体単独を事後レビューに含める。数値だけではAIの輪郭変更や穴の誤処理を合格にしない。CLI指定は任意で、旧jobと白背景の例外に対応する。画素値だけで白背景を自動判定する実装は追加しない。
 
 通常制作はDEFAULT_SETTINGSとパーツ既定（base:auto、shadow:auto、highlight:white、beta:true）を維持し、Codexによる数値・トーン方針の仕上げ調整を省く。画像幅や素材意味を理由に網・濃度・閾値・ベタ可否を変更しない。意味分類・位置合わせ・誤割当修正・全画像レビューは継続し、既定値の見た目の制約を記録する。第2機能は参照由来の設定・素材濃度を維持する。利用者の明示指定を優先し、Codexの推奨設定の提案・適用は推奨を求められた場合だけ行う。新規の既定値制作には前回値や他jobの調整案を流用しない。GUIの利用者調整機能は維持する。
 
@@ -54,7 +58,7 @@ build-mangaはastra_reviewed・全領域を一度だけ割り当てた計画・�
   保存時は線画と重なるベタ画素を除外し、同じ黒線が線画・ベタへ二重に保存されるのを防ぐ。合成画像は線画が同じ黒で補うため維持する。ホワイト用の内側判定は除外前のベタを使う。
 - **網点**: 全レイヤー共通の45°・page-alignedのAM網点。参照元の3倍サンプリング多数決と画素単位で一致させ、濃い網点が薄い網点を含むようにする。tone_format=grayはグレー塗りで出力する。
 
-背景を1パーツにまとめても、影・ハイライトは独立レイヤーとして扱う。利用者が白い背景部分も独立編集するよう指定した場合は、そのpartに`separate_white_highlights:true`を付けられる。白ベースの紙色部分を不透明白のハイライトレイヤーとして同じパーツ内へ保存し、合成画素・トーン設定・引継ぎ濃度は変更しない。第2機能では明示的なhighlight領域の白だけを対象にする。既定は無効で、空のレイヤーは作らない。
+第1機能（トーン版）の新規制作では、利用者から分割指示がない限り背景は`background`の1パーツにまとめ、影・ハイライトを独立レイヤーとして扱う。公開手順ではそのpartに`separate_white_highlights:true`を付ける。白ベースの紙色部分を不透明白のハイライトレイヤーとして同じパーツ内へ保存し、合成画素・トーン設定・引継ぎ濃度は変更しない。第2機能では明示的なhighlight領域の白だけを対象にする。既存jobと低水準APIのフラグ既定は無効のまま、空のレイヤーは作らない。
 
 PSDは上から次の順にする。
 
@@ -136,6 +140,8 @@ input/work/output/backup/.tmp、docsのジョブ・ローカル状態（manga_la
 トーン版の公開作例はexamples/manga（第1機能）とexamples/manga_transfer（第2機能）に、原寸preview.png・線画単独lineart.png・output.psd・tone_reference.jsonを一組で格納する。第1機能の入力公開コピーはexamples/manga/reference.jpg。指定された海辺のカラー画像からQwenImage2.1再描画・Manga Line Extractionを行い、初回はDEFAULT_SETTINGS・各part auto/auto/white/trueで作成した。現在の掲載PSDは利用者指定の調整版で、2793×4096、600dpi、26描画＋15フォルダ、9素材。初回から黒境界0.20、gradation 0、線閾値0.35、dpi 600へ変更されており、Codexは追加の数値調整をせずPSDをそのまま採用する。PNG・線画は実PSDから再出力し、JSONのファイル名・ハッシュ・設定・素材濃度を合わせる。Qwen補助線画は塗り境界だけに使用し、瞳・マフラー端などを局所修正した意味計画を維持する。
 
 第2機能の検証用ファイルは、調整前の第1機能から素材濃度・網設定を継承した832×1248、18描画＋16フォルダ、9素材の版を保持する。両例とも画像幅基準200列で、第2機能のdpiは未指定。背景は利用者指定で1パーツにまとめ、白ハイライトと影を別レイヤーへ分離。現在の第1機能には背景ベタはなく、白レイヤーの分離自体は合成画素を変えない。意味・境界と全比較画像、PNG/PSD全画素一致、JSON可搬性を確認する。公開データのEXIF/XMP・作成者・位置情報・ローカルパス・レイヤー名・JSON記述も検査する。線の粒状混入・残存位置差・第2機能の4.16px網警告・フリンジ一部と袖の結合などは制約として残す。未知入力や実アプリの品質保証ではない。詳細は[作例説明](../examples/README.md#トーン版)。
+
+追加の第1機能作例はexamples/manga_imagegen_defaultとexamples/manga_imagegen_adjustedへ格納し、READMEでは既存Qwen作例の下へ並べる。同じ原画の縮小コピーとimagegen線画・再描画・背景透過版を使い、Qwen成果物やマスクは使わない。1036×1519、25描画＋17フォルダ、9素材、背景1パーツ。既定値版はDEFAULT_SETTINGSと全part auto/auto/white/true。利用者の依頼によるCodex調整版は黒境界0.16、gradation0、線閾値0.40、白抜き0.20、網160列、dpi600、コート/背景のbeta:falseだけを変更する。各PSD・原寸PNG・線単独・隣接JSONを保存し、共通の生成素材3点も既定値版フォルダへ収録する。両版ともPNG/PSD全画素一致・全画像レビュー・JSON読込を確認済み。線の粒状跡・二重線・輪郭差・未実施の実アプリ確認を制約として記録する。既存作例の画像・PSD・JSONを変更しない。
 
 配布には実行コード・requirements・起動BATに加え、AGENTS.mdとREADMEから参照する公開作業手順・参照JSON仕様を含める。トーン版のMANGA_WORKFLOW.md・TONE_TRANSFER_WORKFLOW.md・TONE_REFERENCE.mdも必須。ローカル状態や生成キャッシュは含めず、コミット済みファイルだけを分離した環境でimport・CLI・テスト・文書リンクを確認する。
 

@@ -33,6 +33,9 @@
 - 開始時に、再描画モデル（imagegen / qwen / none）、線抽出（imagegen / qwen / provided / redraw）、トーン形式（dots / gray）を確認する。既に指定されていれば再質問しない。お任せなら既定値（imagegen・同じ・dots）を記録する。
 - `prepare-manga`で元サイズと生成用縮小画像の倍率を記録する。imagegenは`generation_input.png`と`prompts.json`から別ファイルへ生成する。Qwenは利用者が起動したComfyUIへ`run-comfy-manga`で依頼する。ComfyUIのノード・モデルは変更しない。
 - `register-manga`が倍率換算と局所位置合わせをする。`manga_alignment.png`を開き、生成画像のずれ・描き足し・欠落を確認して記録する。座標の判断は元画像のpxで行う。
+- 第1機能（トーン版）の新規制作では、imagegenでカラー原画の背景を透過した被写体画像を別PNGへ作り、`register-manga --foreground ...`へ渡す。構図・被写体・キャンバスを保持し、Pythonが位置合わせしたalphaだけを被写体/背景の分離に使う。生成RGBで原画を置き換えない。`foreground_alignment.png`・マスク・背景単独を目視し、髪先・房・持ち手の穴・画面端の欠落や背景混入を確認する。
+- **利用者が指定した原画像が明らかな白背景の場合は、Codexの目視判断でimagegenの背景透過生成を省略できる。** 省略時は新規jobの`register-manga`へ`--foreground`を渡さず、通常の領域から背景を割り当てる。白い衣装などを背景と誤認しないよう確認し、省略理由を判断ログへ記録する。背景/被写体の分離確認と実PSDの事後レビューは省略しない。
+- 背景は利用者から分割指示がない限り`background`の1パーツへまとめる。背景内の影・ハイライトは別レイヤーとし、新規計画では`separate_white_highlights:true`で紙色の白も編集可能にする。これはトーンの数値調整とは別のレイヤー構成指定。
 - パーツはカラー原画を見て判断する。`manga_regions_*.png`の全領域を割り当て、意味名と階層を付ける。AIの再描画の明暗だけで素材を決めない。
 - **通常はツール既定値で出力し、Codexによる仕上げ設定の調整を行わない。** tone_settingsはDEFAULT_SETTINGS、各partのtoneは既定（base:auto、shadow:auto、highlight:white、beta:true）を維持する。肌だからwhite、黒服だからblackなどの上書き、網・濃度・閾値の変更、前回値やプリセットの流用も行わない。利用者が明示した値は優先し、Codexの推奨設定の提案・適用は推奨を求められた場合だけ行う。
 - 意味分類・位置合わせ・マスクの誤割当修正と事後レビューは継続する。既定値の見た目に制約があっても所見として記録し、無断で数値を変更しない。
